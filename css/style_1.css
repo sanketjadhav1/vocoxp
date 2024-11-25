@@ -1,0 +1,102 @@
+/* css added in web verification pages for voter, pan, DL, aadhar
+
+logo css start */
+/* Basic styles for the logo */
+
+.logo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 2%;
+}
+
+/* Optional: Set a maximum width for the logo */
+header {
+    width: 100%;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .logo {
+        width: 100px;
+        height: 100px;
+    }
+
+    .agency-name {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .agency-name {
+        font-size: 16px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .agency-name {
+        font-size: 22px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .agency-name {
+        font-size: 23px;
+    }
+
+}
+
+@media (min-width: 768px) {
+    .body-background {
+        margin-right: 25%;
+        margin-left: 25%;
+    }
+}
+
+/* logo css end */
+.padd-0 {
+    padding: 0px;
+}
+
+.agency-name {
+    font-weight: 600;
+    color: black;
+    padding: 0% 4% 0% 4%;
+    animation: lightToDark 2s ease-in-out;
+}
+
+.label-required {
+    color: red;
+    font-weight: bold;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+/* Base styling for the header */
+.body-background {
+    background: linear-gradient(to bottom, #fffacd, #fef9e7);
+}
+
+
+.body-background .container {
+    padding: 6%;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: hidden;
+}
+
+@keyframes lightToDark {
+    0% {
+        color: #ffffff;
+    }
+
+    100% {
+        color: #000000;
+    }
+}
