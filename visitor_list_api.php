@@ -83,17 +83,6 @@ if (!empty($_GET['meeting_with'])) {
         return $item['meeting_with'] === $_GET['meeting_with'];
     });
 }
-if (!empty($_GET['date_between'])) {  //between date filter
-    $combinedData = array_filter($combinedData, function($item) {
-        $date_between = explode('@', $_GET['date_between']);   /*date format = 22/05/2024@29/10/2024*/
-        $date_from = date('Y-m-d', strtotime(str_replace('/', '-', $date_between[0])));
-        $date_to = date('Y-m-d', strtotime(str_replace('/', '-', $date_between[1])));
-        
-        $date = (isset($item['inserted_on'])) ? date('Y-m-d', strtotime($item['inserted_on'])) : (isset($item['requested_on']) ? date('Y-m-d', strtotime($item['requested_on'])) : '');
-      
-        return ($date != '') ? ($date >= $date_from && $date <= $date_to) :  false;
-    });
-}
 
 
         // Total records after filtering

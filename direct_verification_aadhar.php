@@ -1,7 +1,7 @@
 <?php
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 // Get the raw POST data
 
 include 'connection.php';
@@ -34,7 +34,6 @@ $verification_id = $_POST['verification_id'] ?? '';
 $base_amount = $_POST['base_amount'] ?? '';
 $sgst_amount = $_POST['sgst_amount'] ?? '';
 $cgst_amount = $_POST['cgst_amount'] ?? '';
-$user_photo = $_FILES['user_photo'] ?? '';
 $front_photo = $_FILES['front_photo'] ?? '';
 $back_photo = $_FILES['back_photo'] ?? '';
 $mode = $_POST['mode'];
@@ -43,7 +42,7 @@ $transaction_id = $_POST['transaction_id']??' ';
 $source_from = $_POST['source_from'] ?? '';
 $site_id = $_POST['site_id'] ?? '';
 $create_worker = $_POST['create_worker'] ?? '';
- $bulk_id=$_POST['bulk_id'] ?? '';
+
 if ($create_worker == 1) {
     $worker_id = unique_id_genrate('WOR', 'construction_site_worker_header_all', $mysqli);
     $name = $_POST['name'];
@@ -62,9 +61,9 @@ $data_fetch_through_ocr = $_POST['data_fetch_through_ocr'] ?? '';
 if ($base_amount != '') {
     $total_amount = $base_amount + $sgst_amount + $cgst_amount;
 } else {
-    $total_amount = '0';
+    $total_amount = '';
 }
- 
+
 
 $check_error = check_error($mysqli, $application_id, $verification_id, $agency_id);
 if ($check_error == 1) {
@@ -104,22 +103,18 @@ if ($check_error == 1) {
         $otp = $_POST['otp'];
 
         // Call function to verify OTP
-        $verification_data = json_decode(verify_aadhaar_otp($otp, $transaction_id), true);
+          $verification_data = json_decode(verify_aadhaar_otp($otp, $transaction_id), true);
 
         if (!empty($verification_data)) {
             if ($verification_data['status'] == '200') {
-                $aadhaar_data = $verification_data['data']['aadhaar_data'];
-
                 $response = [
                     "error_code" => 100,
                     "message" => "OTP has been successfully validated.",
-                    "data" => $verification_data["data"],
-                    "status" => $verification_data['status'],
-                    "all_data" => $verification_data,
                     "transaction_id" => $verification_data['transaction_id']
                 ];
                 echo json_encode($response);
                 return;
+                $verification_data;
             } else {
                 $message = $verification_data['error']['message'];
                 $response = [
@@ -140,37 +135,13 @@ if ($check_error == 1) {
             return;
         }
     } elseif ($mode == "get_aadhar_detail") {
-        $transaction_id = $_POST['transaction_id'];
-        $otp = $_POST['otp'];
-        if ($is_verified == "bulkyes") {
-            // $verification_data = json_decode(verify_aadhaar_otp($otp, $transaction_id), true);
-             $verification_data=json_decode($_POST["ver_data"],true);
-            if ($verification_data['status'] == '200') {
-                
-                 // echo json_encode($verification_data);
-                 
-                 $admin_id=$_POST['admin_id'];
-                 $fetch_wallet = "SELECT `current_wallet_bal` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
-            $res_wallet = mysqli_query($mysqli, $fetch_wallet);
-            $arr_wallet = mysqli_fetch_assoc($res_wallet);
-            if ($arr_wallet['current_wallet_bal'] < $total_amount) {
-                $responce = ["error_code" => 113, "message" => "Due to a technical issue, we are unable to complete your verification at this time. Please contact your agency for further assistance."];
-                            echo json_encode($responce);
-                            return;
-                        } 
-                 // die();
-             }
-             else
-             {
-                $message = $verification_data['error']['message'];
-                $response = [
-                    "error_code" => 199,
-                    "message" => $message,
-                    "transaction_id" => $verification_data['transaction_id']
-                ];
-                echo json_encode($response);
-                return;
-             }
+ 
+    	if ($is_verified == "bulkyes") {
+    		 $transaction_id = $_POST['transaction_id'];
+             $otp = $_POST['otp'];
+
+            $verification_data = json_decode(verify_aadhaar_otp($otp, $transaction_id), true);
+             // echo json_encode($verification_data);
                  
         } 
         if ($is_verified == "yes") {
@@ -178,13 +149,12 @@ if ($check_error == 1) {
             $res_wallet = mysqli_query($mysqli, $fetch_wallet);
             $arr_wallet = mysqli_fetch_assoc($res_wallet);
             if ($arr_wallet['current_wallet_bal'] < $total_amount) {
-                $responce = ["error_code" => 113, "message" => "Your wallet balance is too Low
-        To proceed. Please recharge your wallet."];
+                $responce = ["error_code" => 113, "message" => "Your wallet balance is too Low To proceed. Please recharge your wallet."];
                 echo json_encode($responce);
                 return;
             } 
         }
-        if ($is_verified == "yes") {
+		if ($is_verified == "yes") {
             $verification_data = json_decode(verify_aadhaar_otp($otp, $transaction_id), true);
 
         } 
@@ -217,45 +187,25 @@ if ($check_error == 1) {
 
             if ($j == $cnt) {
                 $percentage = 50;
-              $name_match = 'Match';
+                $name_match = 'Match';
             } else {
-                $name_match = 'Not Match';
+                $mismatch_data = 'Name';
             }
-            if($is_edited!="yes"){
-                $name = $ocr_name;
-                if ($ocr_date_of_birth && preg_match('/^\d{4}-\d{2}-\d{2}$/', $ocr_date_of_birth))
-                {
-                      
-                     $birthdate2 = date('d-m-Y',strtotime($ocr_date_of_birth));
-                }
-                else
-                {
-                     $ocr_birthdate = DateTime::createFromFormat('d/m/Y',$ocr_date_of_birth);
-                        $birthdate2 = $ocr_birthdate->format('d-m-Y');
-                }
-                
-                // $birthdate2 = date('Y-m-d', strtotime($ocr_date_of_birth));
-            } else {
-                $name = $edited_name;
-               if ($edited_date_of_birth && preg_match('/^\d{4}-\d{2}-\d{2}$/', $edited_date_of_birth))
-                {
-                    $edited_birthdate =DateTime::createFromFormat('d/m/Y',$edited_date_of_birth);
-                 $birthdate2 =  $edited_birthdate->format('d-m-Y');
-                }
-                else
-                {
-                    $edited_birthdate =DateTime::createFromFormat('d/m/Y',$edited_date_of_birth);
-                 $birthdate2 =  $edited_birthdate->format('d-m-Y');
-                }
-                
-                // $birthdate2 = date('Y-m-d', strtotime($edited_date_of_birth));
-            }
+			if($is_edited!="yes"){
+                $ocr_birthdate = new DateTime($ocr_date_of_birth);
+                $birthdate2 = $ocr_birthdate->format('Y-m-d');
+			    // $birthdate2 = date('Y-m-d', strtotime($ocr_date_of_birth));
+			} else {
+                $edited_birthdate = new DateTime($edited_date_of_birth);
+                $birthdate2 = $edited_birthdate->format('Y-m-d');
+			    // $birthdate2 = date('Y-m-d', strtotime($edited_date_of_birth));
+			}
             $aadhaar_dob =$aadhaar_data['date_of_birth'];
-            $aadhaar_date =DateTime::createFromFormat('Y-m-d',$aadhaar_dob);
-           $birthdate1 = $aadhaar_date->format('d-m-Y');
+            $aadhaar_date = new DateTime($aadhaar_dob);
+            $birthdate1 = $aadhaar_date->format('Y-m-d');
             // $birthdate1 = $aadhaar_data['date_of_birth'];
           
-            $mismatch_data="";
+
             if ($birthdate2 == $birthdate1) {
                 $birth_date_match = 'Match';
             } else {
@@ -276,71 +226,49 @@ if ($check_error == 1) {
         if($user_photo!=""){
             $user_img=save_doc_photo($user_photo, $direct_id, $agency_id);
         }
-        else
-        {
-            $user_img="";
-        }
-  
-  
-        if($front_photo!="")
-        {
-            $front_img=save_doc_photo($front_photo, $direct_id, $agency_id);
-        }
-        else
-        {
-             $front_img="";
-        }
-        if($back_photo!="")
-        {
-            $back_img=save_doc_photo($back_photo, $direct_id, $agency_id);
-        }
-        else
-        {
-            $back_img="";
-        }
-       $addess1_aadhar= $aadhaar_data["care_of"].",".$aadhaar_data["vtc_name"].",".$aadhaar_data["locality"].",".$aadhaar_data["district"].",".$aadhaar_data["pincode"];
+  $front_img=save_doc_photo($front_photo, $direct_id, $agency_id);
+  $back_img=save_doc_photo($back_photo, $direct_id, $agency_id);
+        
          // Preparing data to send to next page
-             $data = [
-                'name' => $ocr_name,
-                'bulk_id' => $bulk_id,
-                'edited_name' => $edited_name,
-                'aadhar_number' => $ocr_aadhar_number,
-                'edited_aadhar_no' => $edited_aadhar_number,
-                'date_of_birth' => $ocr_date_of_birth,
-                'edited_dob' => $edited_date_of_birth,
-                'address' => $ocr_address,
-                'address_aadhar' => $addess1_aadhar,
-                'edited_address' => $edited_address,
-                'gender' => $ocr_gender,
-                'edited_gender' => $edited_gender,
-                'application_id' => $application_id,
-                'agency_id' => $agency_id,
-                'admin_id' => $admin_id,
-                'verification_id' => $verification_id,
-                'base_amount' => $base_amount,
-                'sgst_amount' => $sgst_amount,
-                'cgst_amount' => $cgst_amount,
-                'is_verified' => $is_verified,
-                'is_edited' => $is_edited,
-                'data_fetch_through_ocr' => $data_fetch_through_ocr,
-                'verification_name' => $aadhaar_data['name'],
-                'verification_dob' => $aadhaar_data['date_of_birth'],
-                'verification_category' => 'Individual',
-                'name_match' => $name_match,
-                'birth_date_match' => $birth_date_match,
-                'pincode_match' => $pincode_match,
-                'percentage' => $percentage,
+			$data = [
+				'name' => $ocr_name,
+				'edited_name' => $edited_name,
+				'aadhar_number' => $ocr_aadhar_number,
+				'edited_aadhar_no' => $edited_aadhar_number,
+				'date_of_birth' => $ocr_date_of_birth,
+				'edited_dob' => $edited_date_of_birth,
+				'address' => $ocr_address,
+				'edited_address' => $edited_address,
+				'gender' => $ocr_gender,
+				'edited_gender' => $edited_gender,
+				'application_id' => $application_id,
+				'agency_id' => $agency_id,
+				'admin_id' => $admin_id,
+				'verification_id' => $verification_id,
+				'base_amount' => $base_amount,
+				'sgst_amount' => $sgst_amount,
+				'cgst_amount' => $cgst_amount,
+				'is_verified' => $is_verified,
+				'is_edited' => $is_edited,
+				'data_fetch_through_ocr' => $data_fetch_through_ocr,
+				'verification_name' => $aadhaar_data['name'],
+				'verification_dob' => $aadhaar_data['date_of_birth'],
+				'verification_category' => 'Individual',
+				'name_match' => $name_match,
+				'birth_date_match' => $birth_date_match,
+				'pincode_match' => $pincode_match,
+				'percentage' => $percentage,
+				'aadhaar_data' => json_encode($aadhaar_data),
                 'front_img'=>$front_img,
                 'back_img'=>$back_img, 
-                'user_img'=>$user_img, 
+                'user'=>$back_img, 
                 'direct_id'=>$direct_id,
                 'dob_ocr'=>$birthdate2,
                 'source_from'=>$source_from                
-            ];
-        
-            // Handle file uploads
-            // print_r($data);
-            
+			];
+		
+			// Handle file uploads
+			
 
             $url = get_base_url() . '/aadhar_pdf_direct.php';
 

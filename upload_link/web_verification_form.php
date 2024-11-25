@@ -15,11 +15,12 @@ $mysqli1 = $connection1->getConnection();
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
     
     $enduser_id = $_GET['enduser_id'];
-     $select_end_details = "SELECT  agency_id,bulk_id, name, mobile,email_id, verification_report, verification_details, weblink_opened_on,payment_from FROM bulk_end_user_transaction_all WHERE end_user_id = '$enduser_id'";
+     $select_end_details = "SELECT  agency_id,bulk_id, name, mobile,email_id, verification_report, verification_details, ref_enduser_id, weblink_opened_on,payment_from FROM bulk_end_user_transaction_all WHERE end_user_id = '$enduser_id'";
     $result = $mysqli->query($select_end_details);
     $select_array = mysqli_fetch_assoc($result);
+    
 
-    $fetch_agency = "SELECT `company_name`, `agency_logo`, `address`, `mobile_no` FROM `agency_header_all` WHERE `agency_id`='".$select_array["agency_id"]."'";
+    $fetch_agency = "SELECT `company_name`,`agency_gst_no`, `agency_logo`, `address`, `mobile_no` FROM `agency_header_all` WHERE `agency_id`='".$select_array["agency_id"]."'";
     $res_agency = mysqli_query($mysqli, $fetch_agency);
     $arr_agency = mysqli_fetch_assoc($res_agency);
     $name=$select_array['name'];
@@ -29,9 +30,38 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $weblink_opened_on=$select_array['weblink_opened_on'];
     $payment_done_by = $select_array['payment_from'];
     $bulk_id = $select_array['bulk_id'];
- 
+    $ref_enduser_id = $select_array['ref_enduser_id'];
+    
+   $end_user_id_array = []; // Initialize an array to store email values
+if($email_id!=''){
+    // echo "hi";
+    $for_skip_email = "SELECT `end_user_id`,`email_id` FROM `bulk_end_user_transaction_all` WHERE `agency_id`='$agency_id' AND `bulk_id`='$bulk_id' AND `email_id`='$email_id'";
+} else {
+
+    $for_skip_email = "SELECT `end_user_id`,`email_id` FROM `bulk_end_user_transaction_all` WHERE `agency_id`='$agency_id' AND `bulk_id`='$bulk_id' AND `end_user_id`='$ref_enduser_id'";
+}
+
+$for_skip_email_result = $mysqli->query($for_skip_email);
+
+if ($for_skip_email_result && $for_skip_email_result->num_rows > 1) {
+    while ($row = $for_skip_email_result->fetch_assoc()) {
+        $end_user_id_array[] = [
+            'end_user_id' => $row['end_user_id'],
+            'email_id' => $row['email_id']
+        ];
+    }
+}
+
+
     $otp = rand(10000, 99999);
    
+}
+        
+// Check payment_from value
+$skip = false; // Default to false, indicating do not skip
+if ($select_array["payment_from"] == 1) {
+    // If payment_from == 1, set $skip to true to skip further code
+    $skip = true;
 }
     $query_delete = "DELETE FROM `bulk_end_user_transaction_all` WHERE `bulk_id`='$bulk_id' AND `name`='' OR `scheduled_verifications`=''";
     $res_query_delete = mysqli_query($mysqli, $query_delete);
@@ -404,7 +434,7 @@ function maskNumber($number)
     cursor: pointer;
 }
     </style>
-    
+<?php $gst =  $arr_agency['agency_gst_no'];?>      
 </head>
 
 <div class="container mt-5 centered" id="container">
@@ -412,7 +442,7 @@ function maskNumber($number)
     <img src="<?php echo $arr_agency['agency_logo']; ?> " alt="Company Logo" class="logo">
     <h4><?php echo $arr_agency['address'] ?></h4>
     <input type="hidden" name="agency_id" id="agency_id" value="<?php echo $agency_id; ?>">
-    <input type="hidden" name="gst_number" id="gst_number" value="<?php echo $arr_agency["gst_number"]; ?>">
+    <input type="hidden" name="gst_number" id="gst_number" value="<?php echo $gst; ?>">
     <input type="hidden" name="end_user_id" id="end_user_id" value="<?php echo $enduser_id; ?>">
     <input type="hidden" name="bulk_id" id="bulk_id" value="<?php echo $bulk_id; ?>">
     <input type="hidden" name="mobile" id="mobile" value="<?php echo $mobile; ?>">
@@ -475,7 +505,7 @@ function maskNumber($number)
                             $a = 1;
 
                             // Main query to get all users based on agency and bulk_id
-                            $end_user_main = "SELECT * FROM `bulk_end_user_transaction_all` WHERE `agency_id`='" . $select_array["agency_id"] . "' AND `end_user_id`='" . $enduser_id . "'  AND `bulk_id`='" . $bulk_id . "'";
+                            $end_user_main = "SELECT * FROM `bulk_end_user_transaction_all` WHERE `agency_id`='" . $select_array["agency_id"] . "' AND `end_user_id`='" . $enduser_id . "'  AND `bulk_id`='" . $bulk_id . "' ";
                             
                             $end_user_main_result = $mysqli->query($end_user_main);
                             
@@ -548,10 +578,10 @@ function maskNumber($number)
                         ?>
 
          
-                <div class="row text-center text-white">
+                <div class="row text-center text-white"  style="display: none;">
                     <div class="col-sm-3"></div>
                     <div class="col-sm-2">
-                        <a href="#payment-section"  class="btn btn-success">Payment</a> 
+                        <a href="#payment-section"  style="display: none;" class="btn btn-success">Payment</a> 
                     </div>
                     <div class="col-sm-2">
 
@@ -559,21 +589,36 @@ function maskNumber($number)
                     </div>
                     <div class="col-sm-2">
 
-                        <a href="#verification-section" class="btn btn-primary">Verification</a>
+                        <a href="#verification-section"  style="display: none;" class="btn btn-primary">Verification</a>
                     </div>
                 </div> 
             </div>
     </div><br>
-     <div id="payment-section" class="card" style="display:block;">
-            <div class="card-header bg-success text-white">Payment</div>
-                <div class="card-body">
-                       <?php 
-                           $a=1;
+    <?php $a=1;
                         $count_unpaid=0;
                         $count_paid=0;
                          $badge ="";
                          $p_status="";
-                         $pdf_url="";
+                         $pdf_url=""; 
+          // Main query to get all users based on agency and bulk_id
+        $end_user_main_p = "SELECT * FROM `bulk_end_user_transaction_all` WHERE `agency_id`='" . $select_array["agency_id"] . "' AND `end_user_id`='" . $enduser_id . "'  AND `bulk_id`='" . $bulk_id . "' ";
+         $end_user_main_result_p = $mysqli->query($end_user_main_p);
+         $end_user_main_array_p = mysqli_fetch_assoc($end_user_main_result_p);
+         if($end_user_main_array_p["payment_from"]==1)
+         {
+$p_status = "p";
+         }
+         else
+         {
+
+
+    ?>
+    
+     <div id="payment-section" class="card" style="display:block;">
+            <div class="card-header bg-success text-white">Payment</div>
+                <div class="card-body">
+                       <?php 
+                          
                             // Prepare and execute the main SQL query
                               $end_user_main = "SELECT * FROM `bulk_end_user_transaction_all` WHERE `agency_id`='".$select_array["agency_id"]."' AND `end_user_id`='".$enduser_id."' OR  `end_user_id`='".$enduser_id."' AND `bulk_id`='".$bulk_id."'";
                             $end_user_main_result = $mysqli->query($end_user_main);
@@ -590,14 +635,19 @@ function maskNumber($number)
                                 // Remove any empty elements (in case of extra commas)
                                 $values_array = array_filter($values_array);
                                  
-
-                                // Loop through each value in the array
+                              // print_r($values_array);
+                                $end_user_ids_from_array = array_column($end_user_id_array, 'end_user_id');
+                                // print_r($end_user_ids_from_array);
+                                // Find common values
+                                $common_end_user_ids = array_intersect($values_array, $end_user_ids_from_array);
+                                $common_end_id = implode(', ', $common_end_user_ids);
+                                                                // Loop through each value in the array
                                 foreach ($values_array as $value) {
                                     // Trim the value in case there are any spaces
                                     $enduser_id_value = trim($value);
 
                                     // Prepare and execute the secondary SQL query
-                                    $end_user_main1 = "SELECT * FROM `bulk_end_user_transaction_all` WHERE `end_user_id`='".$enduser_id_value."'";
+                                    $end_user_main1 = "SELECT * FROM `bulk_end_user_transaction_all` WHERE `end_user_id`='".$enduser_id_value."'  ";
                                     $end_user_main1_result = $mysqli->query($end_user_main1);
                                 if ($end_user_main1_result->num_rows > 0) {
                                     $end_user_main_array1 = mysqli_fetch_assoc($end_user_main1_result);
@@ -623,7 +673,36 @@ function maskNumber($number)
                                                     $badge = '<span class="badge bg-success">P</span>';  // Paid
                                                     $p_status = "p";
                                                     $count_paid++;
+                                                } else if (!empty($end_user_id_array)) {
+                                                    // Sanitize and prepare the end_user_ids for the SQL query
+                                                    $end_user_ids = array_map(function($id) use ($mysqli) {
+                                                        return "'" . $mysqli->real_escape_string($id) . "'";
+                                                    }, $end_user_id_array);
+
+                                                    // Create a comma-separated string of sanitized IDs
+                                                    $end_user_ids_list = implode(',', $end_user_ids);
+
+                                                    // Query to check if any of these end_user_ids exist in the other table
+                                                    $check_query = "SELECT `end_user_id` FROM `end_user_payment_transaction_all` WHERE `end_user_id` IN ($end_user_ids_list)";
+                                                    $check_result = $mysqli->query($check_query);
+
+                                                    if ($check_result && $check_result->num_rows > 0) {
+                                                        $badge = '<span class="badge bg-success">P</span>';  // Paid
+                                                                                                    $p_status = "p";
+                                                                                                    $count_paid++;
+                                                        // Fetch matching end_user_ids if needed
+                                                        $existing_ids = [];
+                                                        while ($row = $check_result->fetch_assoc()) {
+                                                            $existing_ids[] = $row['end_user_id'];
+                                                        }
+                                                       
+                                                    } else {
+                                                        $badge = '<span class="badge bg-danger">N</span>';  // Not Paid
+                                                                                                    $p_status = "n";
+                                                                                                    $count_unpaid++;
+                                                    }
                                                 } else {
+    
                                                     $badge = '<span class="badge bg-danger">N</span>';  // Not Paid
                                                     $p_status = "n";
                                                     $count_unpaid++;
@@ -631,6 +710,30 @@ function maskNumber($number)
 
                                                 // Store the PDF URL for the invoice
                                                 $pdf_url = $payment_array["invoice_url"];
+                                            } else if ($common_end_id === $enduser_id_value){
+                                                $email_ids = array_column($end_user_id_array, 'email_id');
+                                                $first_email = $email_ids[0];
+                                                $track_id ="SELECT `end_user_id`,`email_id` FROM `bulk_end_user_transaction_all` WHERE `agency_id`='$agency_id' AND `bulk_id`='$bulk_id' AND `email_id`='$first_email'";
+                                            $track_query = $mysqli->query($track_id);
+                                                while ($frow = $track_query->fetch_assoc()) {
+                                                     $frow_email = $frow['end_user_id'];
+                                                     $invoice_show ="SELECT `invoice_url` FROM `end_user_payment_transaction_all`  
+                                                                      WHERE FIND_IN_SET('$frow_email', REPLACE(`end_user_id`, ' ', '')) > 0 
+                                                                      AND `bulk_id` = '$bulk_id' ORDER BY `id` DESC LIMIT 1";
+
+                                                    $invoice_show_payment = $mysqli->query($invoice_show);
+                                                    if ($invoice_show_payment && $invoice_show_payment->num_rows > 0){
+                                                          $invoice_show_array = mysqli_fetch_assoc($invoice_show_payment);
+
+                                                        $badge = '<span class="badge bg-success">P</span>';  // Paid
+                                                            $p_status = "p";
+                                                            $count_paid++;
+                                                            if($invoice_show_array["invoice_url"]!=''){
+                                                                $pdf_url = $invoice_show_array["invoice_url"];
+                                                            }
+                                                    }
+                                                }
+                                              
                                             } else {
                                                 // If no payment record found, mark as Not Paid
                                                 $badge = '<span class="badge bg-danger">N</span>';  // Not Paid
@@ -725,10 +828,7 @@ function maskNumber($number)
                                         if($p_status=="p")
                                         {
                                              
-                                            ?>
-                                         
-
-                                        <?PHP 
+                                           
                                         }
                                         else
                                         { 
@@ -756,7 +856,11 @@ function maskNumber($number)
                                             <label><i class="fa fa-inr" style="font-size:14px" aria-hidden="true"></i><?php echo number_format($total_amount,2); ?>/- </label> <!-- Display the last obj_role -->
                                         </div>
                                         <div class="col-sm-1" id="download_row">
-                                             <a href="<?PHP echo$pdf_url; ?>" class="btn btn-xs bg-warning"> <i style="font-size:14px" class="fa">&#xf1c1;</i> </a>
+                                            <?PHP  if(!empty($pdf_url)){ ?>
+                                             <a href="<?PHP 
+                                            
+                                                echo$pdf_url; ?>" class="btn btn-xs bg-warning"> <i style="font-size:14px" class="fa">&#xf1c1;</i> </a>
+                                                <?PHP } ?>
                                         </div>
                                     </div><hr> 
                                     
@@ -819,12 +923,16 @@ function maskNumber($number)
                 </div> 
             </div>
     </div><br>
+    <?PHP }
+
+     ?>
      <div id="verification-section" class="card" style="display:block;">
     <div class="card-header bg-primary text-white">Verification</div>
     <div class="card-body">
         <?php 
-        $a = 1;
-$all_complete = true;
+          $a = 1;
+          
+        $all_complete = true;
         // Main query to get transactions for the end user
         $end_user_main = "SELECT * FROM `bulk_end_user_transaction_all` 
                           WHERE `agency_id` = '".$mysqli->real_escape_string($select_array['agency_id'])."' 
@@ -838,7 +946,13 @@ $all_complete = true;
             $array = $end_user_main_array["ref_enduser_id"] . "," . $enduser_id;
             $values_array = explode(",", $array);
             $values_array = array_map('trim', $values_array); // Trim all values
-
+                              // print_r($values_array);
+            // Extract end_user_id from $end_user_id_array
+            $end_user_ids_from_array = array_column($end_user_id_array, 'end_user_id');
+// print_r($end_user_ids_from_array);
+            // Find common values
+            $common_end_user_ids = array_intersect($values_array, $end_user_ids_from_array);
+             $common_end_id = implode(', ', $common_end_user_ids);
             // Loop through each value in the array
             foreach ($values_array as $enduser_id_value) {
                 $enduser_id_value = $mysqli->real_escape_string($enduser_id_value);
@@ -864,9 +978,37 @@ $all_complete = true;
                                                               WHERE FIND_IN_SET('$enduser_id_value', REPLACE(`end_user_id`, ' ', '')) > 0 
                                                               AND `bulk_id` = '$bulk_id' ORDER BY `id` DESC LIMIT 1";
                     $res_payment = $mysqli->query($payment_query);
-
+echo  $p_status;
                    // Check if there's any payment record found
-                                            if ($res_payment && $res_payment->num_rows > 0) {
+                    if ($common_end_id === $enduser_id_value){
+
+                                                $email_ids = array_column($end_user_id_array, 'email_id');
+                                                $first_email = $email_ids[0];
+                                                $track_id ="SELECT `end_user_id`,`email_id` FROM `bulk_end_user_transaction_all` WHERE `agency_id`='$agency_id' AND `bulk_id`='$bulk_id' AND `email_id`='$first_email'";
+                                            $track_query = $mysqli->query($track_id);
+                                            $paid_end_id = "";
+                                                while ($frow = $track_query->fetch_assoc()) {
+                                             $frow_email = $frow['end_user_id'];
+                                             $invoice_show ="SELECT `invoice_url`,`end_user_id` FROM `end_user_payment_transaction_all`  
+                                                              WHERE FIND_IN_SET('$frow_email', REPLACE(`end_user_id`, ' ', '')) > 0 
+                                                              AND `bulk_id` = '$bulk_id' ORDER BY `id` DESC LIMIT 1";
+
+                                            $invoice_show_payment = $mysqli->query($invoice_show);
+                                            if ($invoice_show_payment && $invoice_show_payment->num_rows > 0){
+                                                  $invoice_show_array = mysqli_fetch_assoc($invoice_show_payment);
+
+                                                $badge = '<span class="badge bg-success">P</span>';  // Paid
+                                                    $p_status = "p";
+                                                    $count_paid++;
+                                                    if($invoice_show_array["invoice_url"]!=''){
+                                                $pdf_url = $invoice_show_array["invoice_url"];
+                                                $paid_end_id = $invoice_show_array["end_user_id"];
+                                                    }
+                                            }
+                                            }
+                                            
+                                              
+                                                } else if ($res_payment && $res_payment->num_rows > 0) {
                                                 // Fetch the payment record details
                                                 $payment_array = mysqli_fetch_assoc($res_payment);
 
@@ -886,7 +1028,7 @@ $all_complete = true;
 
                                                 // Store the PDF URL for the invoice
                                                 $pdf_url = $payment_array["invoice_url"];
-                                            } else {
+                                            } else  {
                                                 // If no payment record found, mark as Not Paid
                                                 $badge = '<span class="badge bg-danger">N</span>';  // Not Paid
                                                 $p_status = "n";
@@ -932,10 +1074,39 @@ $all_complete = true;
                         <div class="col-sm-2">
                             <?php 
                             $verify_badge = "";
+                              echo  $p_status."p_status<br/>";
+                             
 
-                            if ($p_status == "p") {
-                                // Check verification status
-                                if (empty($verification_done)) {
+                            if ($skip && $p_status == "p") {
+                                if ($common_end_id === $enduser_id_value){
+                                    //  $email_ids = array_column($end_user_id_array, 'email_id');
+                                    // $first_email = $email_ids[0];
+                                    // echo $paid_end_id;
+                                    $crack_id ="SELECT `end_user_id`,`email_id`,`scheduled_verifications`,`verification_done` FROM `bulk_end_user_transaction_all` WHERE `agency_id`='$agency_id' AND `bulk_id`='$bulk_id' AND `end_user_id`='$paid_end_id'";
+                                 $crack_query = $mysqli->query($crack_id);
+                                                  $crow = mysqli_fetch_assoc($crack_query);
+                               
+                                 
+                                        // Get scheduled and completed verifications
+                                        $cscheduled_verifications = $crow['scheduled_verifications']; 
+                                        $cverification_done = $crow['verification_done'];
+                                        $carray_verification_done = explode(",", $cverification_done);
+
+                                        $carray_schedule = explode(",", $cscheduled_verifications);
+                                    $cschedule_count = count($carray_schedule);
+                                    $cdone_count = count(array_intersect($carray_schedule, $carray_verification_done));
+
+                                    if ($cdone_count == $cschedule_count) {
+                                        echo "<span class='badge bg-success'>Complete</span>";
+                                        $verify_badge = '<span class="badge bg-success"><i style="font-size:24px" class="fa fa-smile"></i></span>';
+                                    } else {
+                                        echo "<span class='badge bg-warning'>Partial Completed</span>";
+                                        $verify_badge = '<a href="https://mounarchtech.com/vocoxp/verification.php?end_user_id=' . $paid_end_id . '">
+                                                         <span class="badge bg-warning"><i style="font-size:24px" class="fas fa-chevron-circle-right"></i></span></a>';
+                                                         $all_complete = false; // Mark as incomplete
+                                    } 
+                                
+                                   } else if (empty($verification_done) && $skip ) {
                                     echo "<span class='badge bg-warning'>Not Initiated</span>";
                                     $verify_badge = '<a href="https://mounarchtech.com/vocoxp/verification.php?end_user_id=' . $enduser_id_value . '">
                                                      <span class="badge bg-warning"><i style="font-size:24px" class="fas fa-chevron-circle-right"></i></span></a>';

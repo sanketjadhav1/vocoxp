@@ -1,5 +1,5 @@
 <?php
-error_reporting(1);
+error_reporting(0);
 use PHPMailer\PHPMailer\PHPMailer;
 // use PHPMailer\PHPMailer\Exception;
 
@@ -10,7 +10,7 @@ require 'PHPMailer/src/SMTP.php';
 include __DIR__ . '/vendor/autoload.php';
 include_once 'connection.php';
 error_reporting(E_ALL & ~E_DEPRECATED);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 // Now you can use the connection class
 $connection = connection::getInstance();
 $mysqli = $connection->getConnection();
@@ -87,7 +87,7 @@ if ($check_error == 1)
                            <div class="email-body">
                                <div class="email-content">
                                
-                                   <p>Greetings, Recipient,</p>    
+                                   <p>Greetings Recipient,</p>    
                                    <p>To upload employee list, kindly follow the link below. For safety concerns, it is only valid for 24 hours</p>                               
                                    <p><a href="https://mounarchtech.com/vocoxp/upload_link/add_employee.php?agency_id='.$agency_id.'&emp_id='.$emp_id.'">Click here to complete this process</a></p>
                                    <p>Kindly email <a href="mailto:support@microintegrated.in">support@microintegrated.in</a> if youre looking for help.</p>

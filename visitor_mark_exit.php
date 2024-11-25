@@ -19,8 +19,7 @@ switch ($requestMethod) {
         // Check if required fields are provided
         if (!isset($inputData['agency_id']) || empty($inputData['agency_id']) ||
             !isset($inputData['visitor_id']) || empty($inputData['visitor_id'])) {
-            
-            http_response_code(200); // Bad Request
+             
             echo json_encode([
                 "error_code" => 200,
                 "message" => "Missing or invalid parameters. 'agency_id' and 'visitor_id' are required."
@@ -119,8 +118,7 @@ switch ($requestMethod) {
         echo json_encode($response);
         break;
 
-    default:
-        http_response_code(405); // Method Not Allowed
+    default: 
         echo json_encode([
             "error_code" => 405,
             "message" => "Method not allowed."

@@ -27,9 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] == "GET") {
             '2' => 'End User'
         ];
 
-        $arr_setting['reminder_sms'] = $reminder_mapping[$arr_setting['reminder_sms']] ?? 'Unknown';
-        $arr_setting['reminder_email'] = $reminder_mapping[$arr_setting['reminder_email']] ?? 'Unknown';
-        $arr_setting['paid_by'] = $paid_by_mapping[$arr_setting['paid_by']] ?? 'Unknown';
+        $arr_setting['reminder_sms'] = $reminder_mapping[$arr_setting['reminder_sms']] ?? 'NA';
+        $arr_setting['reminder_email'] = $reminder_mapping[$arr_setting['reminder_email']] ?? 'NA';
+        $arr_setting['paid_by'] = $paid_by_mapping[$arr_setting['paid_by']] ?? '';
 
         // Format dates
         $date_fields = [

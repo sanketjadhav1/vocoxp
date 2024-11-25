@@ -80,7 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
 
 
-    $fetch_verification = "SELECT * FROM `verification_configuration_all` WHERE `ver_type`='1' AND `operational_status` = '1'";
+    $fetch_verification = "SELECT * FROM `verification_configuration_all` WHERE `ver_type`='3' AND `operational_status` = '1'";
     $res_verificaton = mysqli_query($mysqli1, $fetch_verification);
     while ($arr_verification = mysqli_fetch_assoc($res_verificaton)) {
 
@@ -641,9 +641,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                             </h2>
                             <section id="upload-section">
                                 <div class="inner">
-                                    <h4>Verification's</h4>
+                                    <!-- <h4>Verification's</h4> -->
                                     <div class="row" id="card_01"></div>
-                                    <h4 id="students" style="display: none;">Verification's for students</h4>
+                                    <!-- <h4 id="students" style="display: none;">Verification's for students</h4> -->
                                     <div class="row" id="card_02"></div>
                                     <br />
                                     <h4>Upload Excel File</h4>
@@ -800,9 +800,14 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         <div id="table_1" class="table-container" style="display: none;">
                             <h3>Verification Amount</h3>
                             <p>Verification amount (Included GST)</p>
-                            <p>Your Current Vallent Balance is <span id="vallet_balance"><?php echo $current_wallet_bal; ?> </span> </p>
-                            <p class="text-danger" style="display:none;" id="low_balance">Your Wallet Balance is slightly low. it’s suggested that Kindly recharge the
+                            <p>Your Current Wallet Balance is <span id="vallet_balance"><?php echo $current_wallet_bal; ?> </span> </p>
+                            <?PHP
+                            if($current_wallet_bal==0 || $current_wallet_bal=="")
+                            { 
+                            ?>
+                            <p class="text-danger" style="display:block;" id="low_balance">Your Wallet Balance is slightly low. it’s suggested that Kindly recharge the
                                 wallet for seamless process at end user verifications</p>
+                                <?Php }?>
                             <div class="form-row">
                                 <div class="form-holder">
                                     <label class="form-row-inner">
@@ -823,7 +828,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                 </div>
                             </div>
                         </div>
-                        <div id="table2" class="table-container" style="display: none;">
+                        <div id="table2" class="table-container enduserhide" style="display: none;">
                             <h3>Verification Amount (End User)</h3>
                             <p>Enter Your additional Amount which will be added in every verification (Included GST)</p>
                             <div class="form-row">
@@ -1029,12 +1034,14 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             $(document).on('click', '#next_slide a[href$="#next"]', function(e) {
                 // Get the values of the input fields
                 var req_no = $('#request-no').val().trim();
+                var wall_total_revenue = $('#total_revenue').val();
                 var upload_excel = $('#upload-excel').val().trim();
 
+// alert(wall_total_revenue);
                 // Debugging output
                 console.log('Request No:', req_no);
                 console.log('Upload Excel:', upload_excel);
-
+                
                 $('#error-message').hide();
 
                 // Initialize a flag to determine if any field is empty
@@ -1070,6 +1077,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             $('#table2').css('display', 'none');
             $('#table_2').css('display', 'none');
 
+
         }
 
         function toggleGridVisibility1() {
@@ -1103,9 +1111,18 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             } else {
                 toastr.error('No file selected.');
             }
+
+            $('#reminder_sms').prop('selectedIndex', 0);
+            $('#reminder_email').prop('selectedIndex', 0);
+            $('#activate_date').val('');
+            $('#valid_till').val('');
+             
+            $('#confighide input[type="radio"]').prop('checked', false); 
+              $("#confighide").hide();
         }
 
         function test1() {
+
             var excel_noElement = document.getElementById('excel_no');
             var excel_no = excel_noElement.value;
             var requestNoElement = document.getElementById('request-no');
@@ -1215,34 +1232,34 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 formData.append('file_name', fileInput);
             }
             var reminderSmsValue = $('#reminder_sms').val();
-            var reminderSmsDate = new Date(); // Current date
+            // var reminderSmsDate = new Date(); // Current date
 
-            if (reminderSmsValue == '1') {
-                reminderSmsDate.setDate(reminderSmsDate.getDate() + 1);
-            } else if (reminderSmsValue == '2') {
-                reminderSmsDate.setDate(reminderSmsDate.getDate() + 2);
-            } else if (reminderSmsValue == '3') {
-                reminderSmsDate.setDate(reminderSmsDate.getDate() + 3);
-            } else {
-                reminderSmsDate = '';
-            }
+            // if (reminderSmsValue == '1') {
+            //     reminderSmsDate.setDate(reminderSmsDate.getDate() + 1);
+            // } else if (reminderSmsValue == '2') {
+            //     reminderSmsDate.setDate(reminderSmsDate.getDate() + 2);
+            // } else if (reminderSmsValue == '3') {
+            //     reminderSmsDate.setDate(reminderSmsDate.getDate() + 3);
+            // } else {
+            //     reminderSmsDate = '';
+            // }
 
-            var formattedReminderSmsDate = reminderSmsDate ? reminderSmsDate.toISOString().split('T')[0] : '';
-            formData.append('reminder_sms', formattedReminderSmsDate);
+            // var formattedReminderSmsDate = reminderSmsDate ? reminderSmsDate.toISOString().split('T')[0] : '';
+            formData.append('reminder_sms', reminderSmsValue);
             var reminderEmailValue = $('#reminder_email').val();
-            var reminderEmailDate = new Date();
+            // var reminderEmailDate = new Date();
 
-            if (reminderEmailValue == '1') {
-                reminderEmailDate.setDate(reminderEmailDate.getDate() + 1);
-            } else if (reminderEmailValue == '2') {
-                reminderEmailDate.setDate(reminderEmailDate.getDate() + 2);
-            } else if (reminderEmailValue == '3') {
-                reminderEmailDate.setDate(reminderEmailDate.getDate() + 3);
-            } else {
-                reminderEmailDate = '';
-            }
-            var formattedReminderEmailDate = reminderEmailDate ? reminderEmailDate.toISOString().split('T')[0] : '';
-            formData.append('reminder_email', formattedReminderEmailDate);
+            // if (reminderEmailValue == '1') {
+            //     reminderEmailDate.setDate(reminderEmailDate.getDate() + 1);
+            // } else if (reminderEmailValue == '2') {
+            //     reminderEmailDate.setDate(reminderEmailDate.getDate() + 2);
+            // } else if (reminderEmailValue == '3') {
+            //     reminderEmailDate.setDate(reminderEmailDate.getDate() + 3);
+            // } else {
+            //     reminderEmailDate = '';
+            // }
+            // var formattedReminderEmailDate = reminderEmailDate ? reminderEmailDate.toISOString().split('T')[0] : '';
+            formData.append('reminder_email', reminderEmailValue);
             formData.append('agency_id', $('#agency_id').val());
             formData.append('bulk_id', $('#bulk_id1').val());
 
@@ -1253,19 +1270,28 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    // console.log(response);
+                    console.log(response);
 
                     // Assuming the response is a JSON object
                     const data = typeof response === 'string' ? JSON.parse(response) : response;
-
+// var obj_1ver = '<?php echo $obj_1_verifications;?>';
+var obj_2ver = '<?php echo $obj_2_verifications;?>';
+var obj_3ver = '<?php echo $obj_3_verifications;?>';
                     // Check if response contains "Total records"
                     if (data.status === "success" && data["Total records"] !== undefined) {
                         totalRecords = parseInt(data["Total records"], 10); // Store only the integer value
-                        $('#validRows').val(totalRecords); // Store in the hidden input
                         obj_1 = parseInt(data["First name count"], 10);
                         obj_2 = parseInt(data["Second name count"], 10);
                         obj_3 = parseInt(data["Third name count"], 10);
-                        // alert(obj_1);
+                        if (obj_2ver!=''){
+                            totalRecords = totalRecords*1 + obj_2*1;
+                        }
+                        if (obj_3ver!=''){
+                            totalRecords = totalRecords*1 + obj_3*1;
+                        } 
+                        console.log(totalRecords);
+                        $('#validRows').val(totalRecords); // Store in the hidden input
+
 
 
 
@@ -1355,7 +1381,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         const obj_11 = response.obj_1_verifications.split(',').length;
                         const obj_22 = response.obj_2_verifications.split(',').length;
                         const obj_33 = response.obj_3_verifications.split(',').length;
-
+                        let no=1;
                         verifications.forEach(function(element, index) {
  if (!rateMap[element]) {
         // Skip this element if it has no entry in rateMap or is invalid
@@ -1431,10 +1457,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                     grandAmount = (totalAmount * 1) + (taxAmount * 1);
                                     break;
                                 default:
-            // Skip this element if no match
-            return;
+                                // Skip this element if no match
+                                return;
                             }
-
                             // Add to card_01
                             let divElement = document.createElement('div');
                             divElement.className = 'col-md-4';
@@ -1442,6 +1467,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                             // divElement.innerHTML = '<button type="button" class="otp-button">' + verificationType + '</button>';
 
                             container.appendChild(divElement);
+                            var user = $('#validRows').val();
 
                             // Add to table1
                             let newRow1 = document.createElement('tr');
@@ -1451,11 +1477,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                             <td>${taxAmount}</td>
                             <td class="total-amount">${grandAmount}</td>`;
 
-                            let amount_total = totalRecords * grandAmount;
+                            let amount_total = user * grandAmount;
                             let newRow_1 = document.createElement('tr');
                             newRow_1.innerHTML = `
                                  <td>${object}-${verificationType}<label style="display:none">@${obj_no}</label></td>
-                                 <td class="users">${totalRecords}</td>
+                                 <td class="users">${user}</td>
                                  <td>${grandAmount.toFixed(2)}</td>
                                   <td class="amount_total">${amount_total.toFixed(2)}</td>`;
                             tbody_1.appendChild(newRow_1);
@@ -1485,6 +1511,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                 allTotalRow.className = 'all_total';
                                 allTotalRow.innerHTML = `
                                     <td colspan="3" style="text-align: end;">all_total</td>
+                                    <input type="hidden" id="total_revenue" value="${totalAmount.toFixed(2)}">
                                     <td class="bg-primary text-light">${totalAmount.toFixed(2)}</td> `;
 
                                 tbody_1.appendChild(allTotalRow);
@@ -1498,20 +1525,21 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                             let newRow2 = document.createElement('tr');
                             newRow2.innerHTML = `
                                 <td>${object}-${verificationType}<label style="display:none">@${obj_no}</label></td>
-                                <td><input type="text" name="amount_${element}" class="input-amount" data-reserve-rate="${reserveRate}" onchange="updateLastTotal(this)" /></td>
+                                <td><input type="text" name="amount_${element}" class="input-amount" data-reserve-rate="${reserveRate}" onchange="updateLastTotal(this,${no})" /></td>
                                 <td>${totalAmount}</td>
                                  <td>${taxAmount}</td>
                                 <td class="total-amount">${grandAmount}</td>`;
                             tbody2.appendChild(newRow2);
 
+                            var userd = $('#validRows').val();
                          
-                            let revenuetotal = totalRecords * grandAmount;
+                            let revenuetotal = userd * grandAmount;
                             totalRevenueSum += revenuetotal;
                             let newRow_2 = document.createElement('tr');
                             newRow_2.innerHTML = `
                             <td>${object}-${verificationType}<label style="display:none">@${obj_no}</label></td>
-                             <td class="users">${totalRecords}</td>
-                              <td class="totalrevenu">${revenuetotal}</td>`;
+                             <td class="users_${no}" id="users_${no}">${userd}</td>
+                              <td class="totalrevenu" id="totalrevenu_${no}">${revenuetotal}</td>`;
                             tbody_2.appendChild(newRow_2);
                             let totalRow = document.getElementById('totalRow');
 
@@ -1520,13 +1548,14 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                 totalRow = document.createElement('tr');
                                 totalRow.id = 'totalRow';
                                 totalRow.innerHTML = `
-        <td colspan="2"><strong>Total Revenue</strong></td>
-        <td class="totalrevenu"><strong>${totalRevenueSum.toFixed(2)}</strong></td>`;
+                                    <td colspan="2"><strong>Total Revenue</strong></td>
+                                    <td class="totalrevenu" id="total-rev"></td>`;
                                 tbody_2.appendChild(totalRow);
                             } else {
-                                totalRow.querySelector('.totalrevenu').innerHTML = `<strong>${totalRevenueSum.toFixed(2)}</strong>`;
+                               totalRow.querySelector('.totalrevenu').innerHTML = `<strong class="total-revenu">${totalRevenueSum.toFixed(2)}</strong>`;
                                 tbody_2.appendChild(totalRow);
                             }
+                            no++;
                         });
 
 
@@ -1558,52 +1587,52 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                     formData.append('file_name', fileInput);
                 }
                 // Handle reminder_sms
-                var reminderSmsValue = $('#reminder_sms').val();
-                var reminderSmsDate = new Date(); // Current date
+                // var reminderSmsValue = $('#reminder_sms').val();
+                // var reminderSmsDate = new Date(); // Current date
 
-                if (reminderSmsValue == '1') {
+                // if (reminderSmsValue == '1') {
 
-                    reminderSmsDate.setDate(reminderSmsDate.getDate() + 1);
-                } else if (reminderSmsValue == '2') {
+                //     reminderSmsDate.setDate(reminderSmsDate.getDate() + 1);
+                // } else if (reminderSmsValue == '2') {
 
-                    reminderSmsDate.setDate(reminderSmsDate.getDate() + 2);
-                } else if (reminderSmsValue == '3') {
+                //     reminderSmsDate.setDate(reminderSmsDate.getDate() + 2);
+                // } else if (reminderSmsValue == '3') {
 
-                    reminderSmsDate.setDate(reminderSmsDate.getDate() + 3);
-                } else {
+                //     reminderSmsDate.setDate(reminderSmsDate.getDate() + 3);
+                // } else {
 
-                    reminderSmsDate = '';
-                }
+                //     reminderSmsDate = '';
+                // }
 
-                // Format reminder_sms date as YYYY-MM-DD
-                if (reminderSmsDate !== '') {
-                    var formattedReminderSmsDate = reminderSmsDate.toISOString().split('T')[0];
-                } else {
-                    var formattedReminderSmsDate = ''; // Empty for "none" option
-                }
+                // // Format reminder_sms date as YYYY-MM-DD
+                // if (reminderSmsDate !== '') {
+                //     var formattedReminderSmsDate = reminderSmsDate.toISOString().split('T')[0];
+                // } else {
+                //     var formattedReminderSmsDate = ''; // Empty for "none" option
+                // }
 
-                formData.append('reminder_sms', formattedReminderSmsDate);
+                // formData.append('reminder_sms', formattedReminderSmsDate);
 
-                var reminderEmailValue = $('#reminder_email').val();
-                var reminderEmailDate = new Date();
+                // var reminderEmailValue = $('#reminder_email').val();
+                // var reminderEmailDate = new Date();
 
-                if (reminderEmailValue == '1') {
-                    reminderEmailDate.setDate(reminderEmailDate.getDate() + 1);
-                } else if (reminderEmailValue == '2') {
-                    reminderEmailDate.setDate(reminderEmailDate.getDate() + 2);
-                } else if (reminderEmailValue == '3') {
-                    reminderEmailDate.setDate(reminderEmailDate.getDate() + 3);
-                } else {
-                    reminderEmailDate = '';
-                }
+                // if (reminderEmailValue == '1') {
+                //     reminderEmailDate.setDate(reminderEmailDate.getDate() + 1);
+                // } else if (reminderEmailValue == '2') {
+                //     reminderEmailDate.setDate(reminderEmailDate.getDate() + 2);
+                // } else if (reminderEmailValue == '3') {
+                //     reminderEmailDate.setDate(reminderEmailDate.getDate() + 3);
+                // } else {
+                //     reminderEmailDate = '';
+                // }
 
-                if (reminderEmailDate !== '') {
-                    var formattedReminderEmailDate = reminderEmailDate.toISOString().split('T')[0];
-                } else {
-                    var formattedReminderEmailDate = ''; // Empty for "none" option
-                }
+                // if (reminderEmailDate !== '') {
+                //     var formattedReminderEmailDate = reminderEmailDate.toISOString().split('T')[0];
+                // } else {
+                //     var formattedReminderEmailDate = ''; // Empty for "none" option
+                // }
 
-                formData.append('reminder_email', formattedReminderEmailDate);
+                // formData.append('reminder_email', formattedReminderEmailDate);
 
 
                 // Append other form fields
@@ -1612,8 +1641,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 formData.append('amount', $('input[name="amount"]:checked').val());
                 formData.append('activate_date', $('#activate_date').val());
                 formData.append('valid_till', $('#valid_till').val());
-                // formData.append('reminder_sms', $('#reminder_sms').val());
-                // formData.append('reminder_email', $('#reminder_email').val());
+                formData.append('reminder_sms', $('#reminder_sms').val());
+                formData.append('reminder_email', $('#reminder_email').val());
+                formData.append('total_revenue', $('#total_revenue').val());
 
                 // Append table data
                 formData.append('table1', JSON.stringify(collectTableData('#table1')));
@@ -1621,15 +1651,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
                 // Send the form data using AJAX
                 $.ajax({
-                    // url: 'https://mounarchtech.com/vocoxp/upload_link/ctrlallinsert.php',
                     url: 'https://mounarchtech.com/vocoxp/upload_link/newCtrlInsert.php',
-
                     type: 'POST',
                     data: formData,
                     processData: false, // Prevent jQuery from automatically transforming the data into a query string
                     contentType: false, // Prevent jQuery from setting the Content-Type header
                     success: function(response) {
-                        // console.log(response);
+                        console.log(response);
                         // Handle the response from the server
                         // console.log(response);
                         toastr.success('Form submitted successfully');
@@ -1665,11 +1693,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         });
 
 
-
-
-        function updateLastTotal(inputElement) {
-
+ 
+          
+         function updateLastTotal(inputElement,val) {
             const userAmount = parseFloat(inputElement.value) || 0;
+           
 
             const row = inputElement.closest('tr');
 
@@ -1677,9 +1705,26 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             const fourthColumnValue = parseFloat(row.cells[3].innerText) || 0;
 
             const newTotalAmount = userAmount + thirdColumnValue + fourthColumnValue;
+
             row.querySelector('.total-amount').innerText = newTotalAmount.toFixed(2);
+            
+             
+              updateLastTotalre(newTotalAmount, val);
         }
 
+        let total = 0;
+
+        function updateLastTotalre(totalAmount, val) {
+
+   let user_val=document.getElementById('users_'+val).innerText; 
+    document.getElementById('totalrevenu_'+val).innerText=totalAmount*user_val; 
+
+    // Increment the total by the passed totalAmount
+    total += totalAmount*user_val;
+
+    // Update the element with id 'total-rev' with the new total
+    document.getElementById('total-rev').innerHTML = `<strong class="total-revenu">${total.toFixed(2)}</strong>`;
+}
         //code for showing request not with upload exel file 
         document.getElementById('request-no').addEventListener('change', function() {
             var selectedOption = this.options[this.selectedIndex];

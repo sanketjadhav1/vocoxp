@@ -22,7 +22,7 @@ $system_date = date("Y-m-d H:i:s");
 $agency_id = $_GET['agency_id'] ?? "";
 $app_id = $_GET['app_id'] ?? "";
 $visitor_id = $_GET['visitor_id'] ?? ""; 
-
+$unique_identifier = uniqid('payment_');
 // Validate inputs
 if (($error = check_error($mysqli, $mysqli1, $agency_id, $visitor_id)) !== 1) {
     echo json_encode($error);
@@ -49,6 +49,7 @@ if ($visitor_res && $visitor_res->num_rows > 0) {
     $emp_res = $mysqli->query($emp_query);
     $emp_row = $emp_res->fetch_assoc();
     $is_approval_required = $emp_row["visitor_approval_required"];
+    $is_visiting_charges = $emp_row["visiting_charges"];
     $is_approval_accepted = $emp_row["status"];
     $emp_designation = $emp_row["designation"];
     $emp_name = $emp_row["name"];
@@ -62,12 +63,15 @@ if ($visitor_res && $visitor_res->num_rows > 0) {
     $visitr_amt_res = $mysqli->query($visitr_amt_query);
     $visitr_amt_row = $visitr_amt_res->fetch_assoc();
 	$verification_amt=$visitr_amt_row["verification_amt"];
+    if($is_visiting_charges == 1) {
 	  $visiting_charges=$visitr_amt_row["visiting_charges"];
-    // $verification_amt = "0";
-    // $visiting_charges = "1.2";
-
+    } else {
+        $visiting_charges = 0;
+    }
+    
+//|| $verification_paid_by != 'W'
     $visitor_entry_through = get_entry_mode($mode, $verification_id);
-    if($verification_id != "MVF-00000")
+    if($verification_id != "MVF-00000" )
      {
 
             $verify_query = "SELECT * FROM `verification_configuration_all` WHERE `verification_id`='$verification_id' AND `ver_type`='1'";
@@ -79,27 +83,31 @@ if ($visitor_res && $visitor_res->num_rows > 0) {
             $rate = $verify_row["rate"];
             $gst = $sgst_percentage + $cgst_percentage; 
             $total_gst = ($rate * $gst) / 100; 
+            $total_rate = $total_gst*1 + $rate*1;
             
     } else {
-        $total_gst = 0;
-        $rate = 0;
+        $total_rate = 0;
     }
-    $verification_total_amt = $verification_amt + $total_gst + $rate;
-            $verification_charge = $verification_total_amt + $visiting_charges;
-            $verification_charge1 = number_format($verification_charge, 2, '.', '');
-    if (!empty($visiting_charges) && $visiting_charges != 0) {
-      
-        // $amount_in_paise = $verification_charge1 * 100; // Convert to paise
-        $amount_in_paise = 1 * 100;
 
-        // $key_id = 'rzp_test_EHLRuyAduIUaEe';
-        // $secret = 'g62rHYGOgkwDsDseFygZc1GW';
+    if($verification_paid_by != 'W') {
+      $verification_total_amt = $verification_amt*1 + $total_rate*1;
+    } else {
+        $verification_total_amt = 0;
+    }
+    
+            $total_amount = $verification_total_amt + $visiting_charges;
+            $total_amount1 = number_format($total_amount, 2, '.', '');
+    if (!empty($total_amount1) && $total_amount1 != 0) {
+      
+        $amount_in_paise = $total_amount1 * 100; // Convert to paise
+        // $amount_in_paise = 1 * 100;
+
         $key_id = 'rzp_live_wXmbkXPVVABiDl';
-		$secret = 'h0QEqFVRQsYlzhFSgML3Dl2J';
-        $headers = [
-            'Content-Type: application/json',
-            'Authorization: Basic ' . base64_encode($key_id . ':' . $secret)
-        ];
+$secret = 'h0QEqFVRQsYlzhFSgML3Dl2J';
+$headers = [
+    'Content-Type: application/json',
+    'Authorization: Basic ' . base64_encode($key_id . ':' . $secret)
+];
 
         // Create customer on Razorpay
         $customerId = create_customer($visitor_name, $visitor_email, $visitor_mobile, $headers);
@@ -109,17 +117,18 @@ if ($visitor_res && $visitor_res->num_rows > 0) {
         }
 
         // Create Razorpay QR code
-        $qrRes = create_qr_code($visitor_name, $amount_in_paise, $customerId, $verification_charge1, $headers);
+        $qrRes = create_qr_code($visitor_name, $amount_in_paise, $headers);
         if (isset($qrRes['image_url'])) {
             $qrID = $qrRes['id'];
             $qrImage = $qrRes['image_url'];
             $date = date("Y-m-d");
-            $transaction_id = 'v_txn_' . time() . random_int(100000, 999999);
+            $transaction_id = $qrRes['notes']['unique_identifier'];
+               // $u_i = $qrRes['notes']['unique_identifier'];
 
-            $sql_pay = "INSERT INTO `visitor_payment_transaction_all` (`agency_id`, `date`, `visitor_id`, `paid_amount`, `verification_amount`, `visiting_amount`, `paid_from`, `paid_via`, `gateway_id`, `inserted_on`, `payment_status`, `v_transaction_id`) VALUES ('$agency_id', '$date', '$visitor_id', '$verification_charge1', '$verification_total_amt', '$visiting_charges', '0', 'QR', '$qrID', '$system_date', 'failed', '$transaction_id')";
+            $sql_pay = "INSERT INTO `visitor_payment_transaction_all` (`agency_id`, `date`, `visitor_id`, `paid_amount`, `verification_amount`, `visiting_amount`, `paid_from`, `paid_via`, `gateway_id`, `inserted_on`, `payment_status`, `v_transaction_id`) VALUES ('$agency_id', '$date', '$visitor_id', '$total_amount1', '$verification_total_amt', '$visiting_charges', '0', 'QR', '$qrID', '$system_date', 'failed', '$transaction_id')";
             mysqli_query($mysqli, $sql_pay);
 
-            $data_res = format_response($is_approval_required, $is_approval_accepted, $visitor_entry_through, $payment_completed, $verification_paid_by, $verification_total_amt, $verification_id, $verification_charge1, $emp_id, $emp_name, $emp_designation, $visiting_pass_valid_upto, $qrImage, $qrID, $transaction_id);
+            $data_res = format_response($is_approval_required, $is_visiting_charges, $is_approval_accepted, $visitor_entry_through, $verification_paid_by, $verification_total_amt, $visiting_charges,$verification_id, $total_amount1, $emp_id, $emp_name, $emp_designation, $visiting_pass_valid_upto, $qrImage, $qrID, $transaction_id);
             echo json_encode(["error_code" => 100, "message" => "Visitor Details Successfully Fetched.", "data" => $data_res]);
             exit;
         } else {
@@ -127,7 +136,7 @@ if ($visitor_res && $visitor_res->num_rows > 0) {
             exit;
         }
     } else {
-        $data_res = format_response($is_approval_required, $is_approval_accepted, $visitor_entry_through, $payment_completed, $verification_paid_by, $verification_total_amt, $verification_id, $verification_charge1, $emp_id, $emp_name, $emp_designation, $visiting_pass_valid_upto, "", "", "");
+        $data_res = format_response($is_approval_required, $is_visiting_charges, $is_approval_accepted, $visitor_entry_through, $verification_paid_by, $verification_total_amt, $visiting_charges,$verification_id, $total_amount1, $emp_id, $emp_name, $emp_designation, $visiting_pass_valid_upto, "", "", "");
         echo json_encode(["error_code" => 100, "message" => "Visitor Details Successfully Fetched.", "data" => $data_res]);
         exit;
     }
@@ -254,22 +263,23 @@ function create_customer($name, $email, $contact, $headers) {
     return $customerId ?? null;
 }
 
- function create_qr_code($name, $amount_in_paise, $customerId, $total, $headers) {
+ function create_qr_code($name, $amount_in_paise, $headers) {
     // Razorpay API call to create QR code
     $qrNote = "QR code payment of " . ($amount_in_paise / 100) . " INR"; // Amount should be displayed in INR
     $pdesc = "Razorpay QR code Payment";
 
+   $unique_identifier = uniqid('payment_');
     // QR code request data
-    $qrpostData = array(
+   $qrpostData = array(
         "type" => "upi_qr",
         "name" => $name,
         "usage" => "single_use",
         "fixed_amount" => true,
         "payment_amount" => $amount_in_paise,
         "description" => $pdesc,
-        "customer_id" => $customerId,
         "notes" => array(
-            "purpose" => $qrNote
+            "purpose" => $qrNote,
+            "unique_identifier" => $unique_identifier
         )
     );
 
@@ -316,16 +326,17 @@ function create_customer($name, $email, $contact, $headers) {
  
  
 
-function format_response($approval_required, $approval_accepted, $entry_mode, $payment_completed, $paid_by, $verification_amt, $verification_id, $total_charged, $emp_id, $emp_name, $emp_designation, $pass_valid_upto, $qr_image, $qr_id, $transaction_id) {
+function format_response($is_approval_required, $is_visiting_charges,$approval_accepted, $entry_mode, $paid_by, $verification_total_amt, $visiting_charges, $verification_id, $verification_charge1,$emp_id, $emp_name, $emp_designation, $pass_valid_upto, $qr_image, $qr_id, $transaction_id) {
     return [
-        "is_approval_required" => $approval_required,
+        "is_approval_required" => $is_approval_required,
+        "is_visting_charges" => $is_visiting_charges,
         "is_approval_accepted" => $approval_accepted,
         "visitor_entry_through" => $entry_mode,
-        "payment_completed" => $payment_completed,
         "verification_paid_by" => $paid_by,
-        "verification_charge" => number_format($verification_amt, 2, '.', ''),
+        "verification_charge" => number_format($verification_total_amt, 2, '.', ''),
+        "visiting_charge" => number_format($visiting_charges, 2, '.', ''),
         "verification_id" => $verification_id,
-        "total_amount_charged" => number_format($total_charged, 2, '.', ''),
+        "total_amount_charged" => number_format($verification_charge1, 2, '.', ''),
         "meeting_with_emp_id" => $emp_id,
         "meeting_with_emp_name" => $emp_name,
         "meeting_with_emp_designation" => $emp_designation,
@@ -334,5 +345,6 @@ function format_response($approval_required, $approval_accepted, $entry_mode, $p
         "qr_id" => $qr_id,
         "transaction_id" => $transaction_id
     ];
+      
 }
 ?>

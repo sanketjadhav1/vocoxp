@@ -1,8 +1,7 @@
 <?php
 include 'connection.php';
 
-function getConnection($instanceClass)
-{
+function getConnection($instanceClass) {
     $connection = $instanceClass::getInstance();
     return $connection->getConnection();
 }
@@ -82,15 +81,14 @@ $data[] = [
 ];
 
 $number = $arr_agency['current_wallet_bal'];
-$rounded = number_format($number, 2, '.', '');
+$rounded=number_format($number, 2, '.', '');
 
 send_response(100, "Data fetched", [
     "data" => $data,
     "current_wallet_bal" => $rounded
 ]);
 
-function send_response($error_code, $message, $additional_data = [])
-{
+function send_response($error_code, $message, $additional_data = []) {
     $response = array_merge([
         "error_code" => $error_code,
         "message" => $message
@@ -98,8 +96,7 @@ function send_response($error_code, $message, $additional_data = [])
     echo json_encode([$response]);
 }
 
-function check_error($mysqli, $mysqli1, $agency_id, $application_id, $mode)
-{
+function check_error($mysqli, $mysqli1, $agency_id, $application_id, $mode) {
     if (!$mysqli || !$mysqli1) {
         send_response(101, "Unable to proceed with your request, please try again later");
         return false;
@@ -117,8 +114,7 @@ function check_error($mysqli, $mysqli1, $agency_id, $application_id, $mode)
     return true;
 }
 
-function validate_parameter($param, $name)
-{
+function validate_parameter($param, $name) {
     if (!isset($param)) {
         send_response(103, "Please pass the parameter of $name");
         return false;
@@ -129,3 +125,4 @@ function validate_parameter($param, $name)
     }
     return true;
 }
+?>

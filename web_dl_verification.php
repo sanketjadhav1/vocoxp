@@ -12,7 +12,7 @@ date_default_timezone_set('Asia/kolkata');
 
 $verification_id = 'DVF-00004';
 $application_id = 'APP-00001';
-$verification_details = "SELECT * FROM `verification_configuration_all` WHERE `ver_type`='1' AND `verification_id`='$verification_id' AND `operational_status`='1' AND `application_id` = '$application_id'";
+$verification_details = "SELECT * FROM `verification_configuration_all` WHERE `ver_type`='3' AND `verification_id`='$verification_id' AND `operational_status`='1' AND `application_id` = '$application_id'";
 $details_result = $mysqli1->query($verification_details);
 
 $ver_array = mysqli_fetch_assoc($details_result);

@@ -92,14 +92,16 @@ if ($check_error == 1) {
     }
 
     // qyery for get data from sample rule table 
-    $excel_attachment_query = "SELECT excel_url, type FROM sample_excel_definations_all WHERE excel_no = '$excel_no'";
+    $excel_attachment_query = "SELECT excel_url, type,user_validation_url FROM sample_excel_definations_all WHERE excel_no = '$excel_no' AND type_for_excel='1'";
     $res_excel_attachment_query = $mysqli->query($excel_attachment_query);
     if ($res_excel_attachment_query->num_rows > 0) {
         $row = $res_excel_attachment_query->fetch_assoc();
         $excel_url = $row['excel_url'];
+        $user_validation_url = trim($row['user_validation_url']);
         $type = $row['type'];
     }
     $filename = basename(stripslashes($excel_url));
+    $filename_user_validation_url = basename(stripslashes($user_validation_url));
 
 
     
@@ -145,62 +147,87 @@ if ($check_error == 1) {
         return;
     }
 
-    // Send email with PHPMailer
-    $mail = new PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host = 'mail.mounarchtech.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = 'transactions@mounarchtech.com';
-        $mail->Password = 'Mtech!@12345678';  
-        $mail->SMTPSecure = 'ssl';
-        $mail->Port = 465;
-        $mail->setFrom('transactions@mounarchtech.com', 'Micro Integrated Semi Conductor Systems Pvt. Ltd.');
-        $mail->isHTML(true);
-        $mail->Subject = 'Action Required: Complete Your Verification Data';
-        $mail->Body = '<!DOCTYPE html>
-                       <html>
-                       <head>
-                           <style>
-                               .email-body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                               .email-header { background-color: #f0f0f0; padding: 20px; text-align: center; }
-                               .email-content { padding: 20px; }
-                               .button { display: inline-block; padding: 10px 20px; margin: 20px 0; font-size: 16px; color: white; background-color: #007BFF; text-decoration: none; border-radius: 5px; }
-                               .email-footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
-                           </style>
-                       </head>
-                       <body>
-                           <div class="email-body">
-                               <div class="email-content">
-                               <p>'.$type.'</p>
-                                   <p>Dear Recipient,</p>                                   
-                                   <p><a href="https://mounarchtech.com/vocoxp/upload_link/index.php?agency_id='.$agency_id.'&bulk_id='.$bulk_id.'">Click here to upload the data</a></p>
-                                   <p>If you have any questions or require assistance, please reach out to support@microintegrated.in.</p>
-                                   <p>Note: Please do not change the column names and numbers as this will affect data analysis.</p>
-                                   <p>Thank you for your cooperation.</p>
-                                   <p>Best regards,</p>
-                                   <p>Micro Integrated Semi Conductor Systems Pvt. Ltd.</p>
-                               </div>
-                           </div>
-                       </body>
-                       </html>';
-        $mail->addAttachment($filename); 
-        foreach ($ids as $email) {
-            $mail->addAddress($email);
-            $mail->send();
-            $mail->clearAddresses(); 
-        }
+    // Send email with PHPMailer 
+$mail = new PHPMailer(true);
 
-        if ($res_web) {
-            $response = ["error_code" => 100, "message" => "Mail sent to provided email IDs. Please check your inbox."];
-            echo json_encode($response);
-            return;
+try {
+    // Configure PHPMailer for SMTP
+    $mail->isSMTP();
+    $mail->Host = 'mail.mounarchtech.com';
+    $mail->SMTPAuth = true;
+    $mail->Username = 'transactions@mounarchtech.com';
+    $mail->Password = 'Mtech!@12345678';
+    $mail->SMTPSecure = 'ssl';
+    $mail->Port = 465;
+
+    // Set sender details
+    $mail->setFrom('transactions@mounarchtech.com', 'Micro Integrated Semi Conductor Systems Pvt. Ltd.');
+    $mail->isHTML(true);
+
+    // Email content
+    $mail->Subject = 'New weblink generated for the verifications of ' . $type ;
+    $mail->Body = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                .email-body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .email-header { background-color: #f0f0f0; padding: 20px; text-align: center; }
+                .email-content { padding: 20px; }
+                .button { display: inline-block; padding: 10px 20px; margin: 20px 0; font-size: 16px; color: white; background-color: #007BFF; text-decoration: none; border-radius: 5px; }
+                .email-footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+            </style>
+        </head>
+        <body>
+            <div class="email-body">
+                <div class="email-content">
+                    <p>Dear Recipient,</p>
+                    <p>This is to inform you that as per your request, a weblink is generated for the verifications of <b>' . $type . ' </b>. Please download the attachment and fill the data (whose verification is to be done). Once you are done with the data filling, use the link below to upload it and proceed further. </p>
+                    <p><a href="https://mounarchtech.com/vocoxp/upload_link/index.php?agency_id=' . $agency_id . '&bulk_id=' . $bulk_id . '">Click here to upload the data</a></p>
+                    <p>If you have any questions or require assistance, please reach out to support@microintegrated.in.</p>
+                    <p><b>Note: Please do not change the column names and numbers as this will affect data analysis.</b></p>
+                    <p>Thank you for your cooperation.</p>
+                    <p><b>Best regards,</b></p>
+                    <p><b>Micro Integrated Semi Conductor Systems Pvt. Ltd.</b></p>
+                </div>
+            </div>
+        </body>
+        </html>';
+
+    // Attach files (if they exist)
+    $attachments = [$filename, $filename_user_validation_url];
+    foreach ($attachments as $attachment) {
+        if (file_exists($attachment)) {
+            $mail->addAttachment($attachment);
+        } else {
+            error_log("Attachment file not found: $attachment");
         }
-    } catch (Exception $e) {
-        $response = ["error_code" => 101, "message" => "Mail could not be sent. Mailer Error: {$mail->ErrorInfo}"];
-        echo json_encode($response);
-        return;
     }
+
+    // Send email to all recipients
+    foreach ($ids as $email) {
+        $mail->addAddress($email);
+        $mail->send();
+        $mail->clearAddresses(); // Clear recipients for next iteration
+    }
+
+    // Success response
+    if ($res_web) {
+        $response = [
+            "error_code" => 100,
+            "message" => "Mail sent to provided email IDs. Please check your inbox."
+        ];
+        echo json_encode($response);
+    }
+} catch (Exception $e) {
+    // Error response
+    $response = [
+        "error_code" => 101,
+        "message" => "Mail could not be sent. Mailer Error: {$mail->ErrorInfo}"
+    ];
+    echo json_encode($response);
+}
+
 }
 
 // Helper function to validate input

@@ -8,6 +8,7 @@ $connection = connection::getInstance()->getConnection();
 // Set the header for JSON response
 header('Content-Type: application/json');
 
+error_reporting(1);
 // Check the request method
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
@@ -16,7 +17,7 @@ switch ($requestMethod) {
         // Check if required parameters are provided
         if (!isset($_GET['agency_id']) || empty($_GET['agency_id']) || 
             !isset($_GET['visitor_id']) || empty($_GET['visitor_id'])) {
-            http_response_code(400); // Bad Request
+            // http_response_code(400); // Bad Request
             echo json_encode([
                 "error_code" => 404,
                 "message" => "Missing or invalid parameters: agency_id and visitor_id are required."

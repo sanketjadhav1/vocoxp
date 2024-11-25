@@ -1,11 +1,11 @@
 
 <?php
+error_reporting(E_ALL & ~E_DEPRECATED);
+ini_set('display_errors',0);
 
- error_reporting(E_ALL & ~E_DEPRECATED);
- ini_set('display_errors', 0);
 
-header('Content-Type: application/json; charset=UTF-8');
-header('Access-Contorl-Allow-Origin: *');
+// header('Content-Type: application/json; charset=UTF-8');
+// header('Access-Contorl-Allow-Origin: *');
 date_default_timezone_set('Asia/kolkata');
 include 'connection.php';
 $connection = connection::getInstance();
@@ -13,9 +13,7 @@ $mysqli = $connection->getConnection();
 
 $connection1 = database::getInstance();
 $mysqli1 = $connection1->getConnection();
-
-
-date_default_timezone_set('Asia/kolkata');
+ 
 $system_date = date("y-m-d");
 $system_date_time = date("Y-m-d H:i:s");
 $output = $responce = array();
@@ -81,13 +79,37 @@ if ($check_error_res == 1) {
     {
         $bulk_id=$_POST['bulk_id'];
         $admin_id=$_POST['admin_id'];
+        $fetch_wallet = "SELECT `current_wallet_bal` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
+            $res_wallet = mysqli_query($mysqli, $fetch_wallet);
+            $arr_wallet = mysqli_fetch_assoc($res_wallet);
+            if ($arr_wallet['current_wallet_bal'] < $total_amount) {
+                $responce = ["error_code" => 113, "message" => "Due to a technical issue, we are unable to complete your verification at this time. Please contact your agency for further assistance."];
+                            echo json_encode($responce);
+                            return;
+                        } 
+                 // die();
+             }
+             else
+             {
+                $message = $verification_data['error']['message'];
+                $response = [
+                    "error_code" => 199,
+                    "message" => $message,
+                    "transaction_id" => $verification_data['transaction_id']
+                ];
+                echo json_encode($response);
+                return;
+             }
         $verification_data = json_decode(verify_pan($pan, $reason), true);
         // print_r($verification_data);
         // die();
         if ($verification_data['code'] == 200 ) {
-
+             $percentage = 0;
+        $cnt = 0;
+        $j = 0;
              $adhar_name_arr = explode(" ", strtoupper($verification_data['data']['full_name']));
-            //print_r($adhar_name_arr);
+            // print_r($adhar_name_arr);
+            // die();
             $person_name_arr = explode(" ", strtoupper(trim($user_name, " ")));
             //print_r($person_name_arr);
             if (sizeof($adhar_name_arr) > sizeof($person_name_arr)) 
@@ -187,10 +209,15 @@ if ($check_error_res == 1) {
                 }
                 $verification_data = json_decode(verify_pan($pan, $reason), true);
                 // print_r($verification_data);
+                $user_img="";
           if ($user_photo != "") {
          $user_img = save_doc_photo($user_photo, $direct_id, $agency_id);
     }
-    $front_img = save_doc_photo($front_photo, $direct_id, $agency_id);
+    $front_img="";
+     if ($front_photo != "") {
+         $front_img = save_doc_photo($front_photo, $direct_id, $agency_id);
+    }
+   
                 
 
     if ($is_verified == "yes") 
@@ -334,8 +361,8 @@ if ($check_error_res == 1) {
                     'is_verified' => $is_verified,
                     'is_edited' => $is_edited,
                     'data_fetch_through_ocr' => $data_fetch_through_ocr,
-                    'uploaded_documents' =>  basename($_FILES['front_photo']['name']),
-                    'user_photo' =>  basename($_FILES['user_photo']['name']),
+                    'uploaded_documents' =>  $front_img,
+                    'user_photo' =>  $user_img,
                     'verification_name' => $verification_data['data']['full_name'],
                     'verification_category' => $verification_data['data']['category'],
                     'verification_pan' => $verification_data['data']['pan'],
@@ -434,8 +461,8 @@ if ($check_error_res == 1) {
                     'is_verified' => $is_verified,
                     'is_edited' => $is_edited,
                     'data_fetch_through_ocr' => $data_fetch_through_ocr,
-                    'uploaded_documents' =>  basename($_FILES['front_photo']['name']),
-                    'user_photo' =>  basename($_FILES['user_photo']['name']),
+                    'uploaded_documents' => $front_img,
+                    'user_photo' => $user_img,
                     'verification_name' => $verification_data['data']['full_name'],
                     'verification_category' => $verification_data['data']['category'],
                     "direct_id"=>$direct_id,
@@ -467,6 +494,7 @@ if ($check_error_res == 1) {
                     // Print the response
                     // echo $response1;
                     $dataArray = json_decode($response1, true);
+
                    if (json_last_error() !== JSON_ERROR_NONE) {
                                 echo 'JSON decode error: ' . json_last_error_msg();
                                 exit;
@@ -514,7 +542,7 @@ if ($check_error_res == 1) {
 
     // Data to send
    
-}
+ 
 
 
 function check_error($mysqli, $mysqli1, $application_id, $verification_id, $agency_id)
@@ -937,9 +965,6 @@ function save_doc_photo($upload_file, $direct_id, $agency_id)
     // Return the URL of the uploaded file
     return $emp_imageURL;
 }
-
-
-
-
+ 
 
 ?>

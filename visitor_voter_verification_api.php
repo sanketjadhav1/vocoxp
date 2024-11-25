@@ -1,8 +1,9 @@
-<!-- voter verification api (check data from temp table & match wih original details)
-check & update wallet balance according to payment type
-save visitor_voter_details_all for ambiguity details(e.g name@original name!temp name)
-create report pdf & save it in pdf_path in report_url -->
+
 <?php
+// voter verification api (check data from temp table & match wih original details)
+// check & update wallet balance according to payment type
+// save visitor_voter_details_all for ambiguity details(e.g name@original name!temp name)
+// // create report pdf & save it in pdf_path in report_url
 ini_set('display_errors', 1);
 date_default_timezone_set('Asia/kolkata');
 
@@ -21,32 +22,35 @@ date_default_timezone_set('Asia/kolkata');
 $system_date = date("y-m-d");
 $system_datetime = date('Y-m-d H:i:s');
 
-$voter_number = $_POST['voter_number'] ?? '';
-$base_amount = (isset($_POST['cgst_amount']) && $_POST['cgst_amount'] != '') ? $_POST['base_amount'] : 0;
-$sgst_amount = (isset($_POST['sgst_amount']) && $_POST['sgst_amount'] != '') ? $_POST['sgst_amount'] : 0;
-$cgst_amount = (isset($_POST['cgst_amount']) && $_POST['cgst_amount'] != '') ? $_POST['cgst_amount'] : 0;
-$agency_id = $_POST['agency_id'];
 $visitor_id  = $_POST['visitor_id'] ?? '';
-$verification_id = 'DVF-00005';   //voter ID
+$agency_id  = $_POST['agency_id'] ?? '';
 $current_wallet_bal = 0;
 $response_arr = array();
 
-$total_amount = $base_amount + $sgst_amount + $cgst_amount;
-
-$check_error_res = check_error($mysqli, $mysqli1, $agency_id, $visitor_id, $voter_number);
+$check_error_res = check_error($mysqli, $mysqli1, $visitor_id, $agency_id);
 
 
 if ($check_error_res == 1) {
     //get visitor details
-    $visitor_temp_detail_all = "SELECT * FROM `visitor_temp_activity_detail_all` WHERE `visitor_id` = '$visitor_id'";
+    $visitor_temp_detail_all = "SELECT * FROM `visitor_temp_activity_detail_all` WHERE `visitor_id` = '$visitor_id' AND `agency_id` = '$agency_id'";
     $res_visitor_detail = mysqli_query($mysqli, $visitor_temp_detail_all);
     $visitor_temp_detail_arr = mysqli_fetch_assoc($res_visitor_detail);
 
     $agency_id = $visitor_temp_detail_arr['agency_id'];
     $emp_id = $visitor_temp_detail_arr['meeting_with'];
+    $voter_number = $visitor_temp_detail_arr['voter_number'];
+    $visitor_location_id = $visitor_temp_detail_arr['visitor_location_id'];
+    $verification_id = $visitor_temp_detail_arr['verification_type']; //'DVF-00005'-voter ID
+
+
+    if (empty($voter_number)) {
+        $response = ["error_code" => 108, "message" => "voter_number can not be empty"];
+        echo json_encode($response);
+        return;
+    }
 
     //get payment details of employee
-    $employee_header_all = "SELECT `verification_paid_by` FROM `employee_header_all` WHERE `emp_id` = '$emp_id'";
+    $employee_header_all = "SELECT `verification_paid_by` FROM `employee_header_all` WHERE `emp_id` = '$emp_id' AND `agency_id` = '$agency_id'";
     $res_employee_detail = mysqli_query($mysqli, $employee_header_all);
     $employee_detail_arr = mysqli_fetch_assoc($res_employee_detail);
 
@@ -56,6 +60,40 @@ if ($check_error_res == 1) {
             $fetch_wallet = "SELECT `current_wallet_bal` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
             $res_wallet = mysqli_query($mysqli, $fetch_wallet);
             $arr_wallet = mysqli_fetch_assoc($res_wallet);
+           
+            //get total verification rate & gst 
+            $verify_query = "SELECT * FROM verification_configuration_all WHERE verification_id='$verification_id' AND ver_type='1' AND operational_status='1'";
+            $verify_res = $mysqli1->query($verify_query);
+            $verify_row = $verify_res->fetch_assoc();
+
+            $sgst_percentage = $verify_row["sgst_percentage"];
+            $cgst_percentage = $verify_row["cgst_percentage"];
+            $verify_rate = $verify_row["rate"];
+            $total_gst = $sgst_percentage + $cgst_percentage;
+            $total_verify_rate = ($total_gst) + ($verify_rate);
+            $verify_sgst_amount = ($verify_rate * $sgst_percentage) / 100;
+            $verify_cgst_amount = ($verify_rate * $cgst_percentage) / 100;
+
+            //get total verification rate according to location
+            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= $visitor_location_id";
+            $location_setting_res = $mysqli1->query($location_setting_query);
+            $location_setting_row = $location_setting_res->fetch_assoc();
+
+            $location_ver_amt = 0;
+            $loc_sgst_amount = 0;
+            $loc_cgst_amount = 0;
+            $total_loc_rate = 0;
+            if (isset($location_setting_row['verification_amt']) && $location_setting_row['verification_amt'] != '') {
+                $location_ver_amt = $location_setting_row['verification_amt'];
+                $total_loc_rate = $total_gst + $location_ver_amt;
+                $loc_sgst_amount = ($location_ver_amt * $sgst_percentage) / 100;
+                $loc_cgst_amount = ($location_ver_amt * $cgst_percentage) / 100;
+            }
+
+            $total_sgst_amount = $verify_sgst_amount + $loc_sgst_amount;
+            $total_cgst_amount = $verify_cgst_amount + $loc_cgst_amount;
+            $total_amount = $total_verify_rate + $total_loc_rate;
+            $base_amount = $verify_rate + $location_ver_amt;
 
             if ($arr_wallet['current_wallet_bal'] < $total_amount) {
                 $responce = ["error_code" => 113, "message" => "Your wallet balance is too Low To proceed. Please recharge your wallet."];
@@ -63,21 +101,7 @@ if ($check_error_res == 1) {
                 return;
             }
 
-            //get total verification rate & gst
-            $verify_query = "SELECT * FROM verification_configuration_all WHERE verification_id='$verification_id' AND ver_type='1' AND operational_status='1'";
-            $verify_res = $mysqli1->query($verify_query);
-            $verify_row = $verify_res->fetch_assoc();
-
-            $sgst_percentage = $verify_row["sgst_percentage"];
-            $cgst_percentage = $verify_row["cgst_percentage"];
-            $rate = $verify_row["rate"];
-            $gst = $sgst_percentage + $cgst_percentage;
-            $total_gst = ($rate * $gst) / 100;
-            $total_rate = ($total_gst * 1) + ($rate * 1);
-            $sgst_amount = ($rate * $sgst_percentage) / 100;
-            $cgst_amount = ($rate * $cgst_percentage) / 100;
-
-            $current_wallet_bal = $arr_wallet['current_wallet_bal'] - $total_rate;
+            $current_wallet_bal = $arr_wallet['current_wallet_bal'] - $total_amount;
 
             //update current wallet balance
             $update_wallet = "UPDATE `agency_header_all` SET `current_wallet_bal` = '$current_wallet_bal' WHERE `agency_id` = '$agency_id'";
@@ -87,7 +111,7 @@ if ($check_error_res == 1) {
             }
 
             //insert wallet payment transaction
-            $wallet_trans_query = "INSERT INTO `wallet_payment_transaction_all` (`agency_id`,`user_id`,`requested_from`,`purchase_type`,`verification_id`,`base_amount`,`cgst_amount`,`sgst_amount`,`transaction_on`,`transaction_id`,`line_type`,`quantity`,`settled_for`,`ref_transaction_id`) VALUES ('$agency_id','$visitor_id',4,1,'$verification_id', '$rate', '$cgst_amount','$sgst_amount', '$system_datetime', '',1,0,'','')";
+            $wallet_trans_query = "INSERT INTO `wallet_payment_transaction_all` (`agency_id`,`user_id`,`requested_from`,`purchase_type`,`verification_id`,`base_amount`,`cgst_amount`,`sgst_amount`,`transaction_on`,`transaction_id`,`line_type`,`quantity`,`settled_for`,`ref_transaction_id`) VALUES ('$agency_id','$visitor_id',4,1,'$verification_id', '$base_amount', '$total_cgst_amount','$total_sgst_amount', '$system_datetime', '',1,0,'','')";
 
             $insert_wallet_trans =  $mysqli->query($wallet_trans_query);
             if (!$insert_wallet_trans) {
@@ -97,10 +121,15 @@ if ($check_error_res == 1) {
 
         //get voter id card data for verification
         $verification_data = json_decode(verify_voter_id($voter_number), true);
-        $original_voter_details = $verification_data['data']['voter_data'];
 
         if ($verification_data['data']['code'] != 1000 && $verification_data['status'] != 200) {
             $responce = ["error_code" => 199, "message" => "Voter number is invalid. Please provide the valid voter number"];
+            echo json_encode($responce);
+            return;
+        }
+        $original_voter_details = $verification_data['data']['voter_data'];
+        if (empty($original_voter_details)) {
+            $responce = ["error_code" => 404, "message" => "Original voter id data is not found."];
             echo json_encode($responce);
             return;
         }
@@ -255,7 +284,7 @@ if ($check_error_res == 1) {
             <img src="' . $visitor_temp_detail_arr['front_photo'] . '" alt="Placeholder image" width="30%" />
         </td>
         <td scope="col" align="center">
-            <p style="text-align: center; font-size:15px;">Front Image</p>
+            <p style="text-align: center; font-size:15px;">Back Image</p>
             <br>
             <img src="' . $visitor_temp_detail_arr['back_photo'] . '" alt="Placeholder image" width="30%" />
         </td>
@@ -479,7 +508,7 @@ if ($check_error_res == 1) {
 
 
 /* check errors*/
-function check_error($mysqli, $mysqli1, $agency_id, $visitor_id, $voter_number)
+function check_error($mysqli, $mysqli1, $visitor_id, $agency_id)
 {
     $check_error = 1;
     if (!$mysqli || !$mysqli1) {
@@ -492,19 +521,14 @@ function check_error($mysqli, $mysqli1, $agency_id, $visitor_id, $voter_number)
         echo json_encode($response);
         return;
     }
-    if (empty($agency_id)) {
-        $response = ["error_code" => 106, "message" => "agency_id can not be empty"];
-        echo json_encode($response);
-        return;
-    }
     if (empty($visitor_id)) {
         $response = ["error_code" => 106, "message" => "visitor_id can not be empty"];
         echo json_encode($response);
         return;
     }
-    if (empty($voter_number)) {
-        $responce = ["error_code" => 199, "message" => "Voter number cannot be empty"];
-        echo json_encode($responce);
+    if (empty($agency_id)) {
+        $response = ["error_code" => 106, "message" => "agency_id can not be empty"];
+        echo json_encode($response);
         return;
     }
 

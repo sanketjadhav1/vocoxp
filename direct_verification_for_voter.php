@@ -109,6 +109,27 @@ if ($check_error_res == 1) {
             $verification_data = json_decode(verify_voter_id($user_voter_number), true);
             // print_r($verification_data);
             // exit;
+            $fetch_wallet = "SELECT `current_wallet_bal` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
+            $res_wallet = mysqli_query($mysqli, $fetch_wallet);
+            $arr_wallet = mysqli_fetch_assoc($res_wallet);
+            if ($arr_wallet['current_wallet_bal'] < $total_amount) {
+                $responce = ["error_code" => 113, "message" => "Due to a technical issue, we are unable to complete your verification at this time. Please contact your agency for further assistance."];
+                            echo json_encode($responce);
+                            return;
+                        } 
+                 // die();
+             }
+             else
+             {
+                $message = $verification_data['error']['message'];
+                $response = [
+                    "error_code" => 199,
+                    "message" => $message,
+                    "transaction_id" => $verification_data['transaction_id']
+                ];
+                echo json_encode($response);
+                return;
+             }
             if ($verification_data['data']['code'] == 1000) {
                $bulk_id=$_POST['bulk_id'];
                     $admin_id=$_POST['admin_id'];
@@ -186,7 +207,7 @@ To proceed. Please recharge your wallet."];
             
            
 
-    } 
+   
     $direct_id = unique_id_genrate('DIR', 'direct_verification_details_all', $mysqli);
     if($user_photo!=""){
         $user_img=save_doc_photo($user_photo, $direct_id, $agency_id);

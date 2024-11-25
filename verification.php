@@ -79,65 +79,54 @@ $system_date_time = date("Y-m-d H:i:s"); ?>
     // Example PHP Code to handle logic and output SweetAlert
 
     // Assuming you've already fetched and validated the data from the database
-    $weblink_activated_from = date("Y-m-d", strtotime($upload_array["weblink_activated_from"])); // Example date
-    $weblink_valid_till = date("Y-m-d", strtotime($upload_array["weblink_valid_till"]));     // Example date
-    $current_date = date('Y-m-d');          // Current date
+   
+$weblink_activated_from = date("Y-m-d", strtotime($upload_array["weblink_activated_from"])); // Example date
+$weblink_valid_till = date("Y-m-d", strtotime($upload_array["weblink_valid_till"]));         // Example date
+$current_date = date('Y-m-d'); // Current date
 
-
-    // Check if the current date is within the range
-    if ($current_date >= $weblink_activated_from && $current_date <= $weblink_valid_till) {
-        echo "
-        <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-        <script>
-            Swal.fire({
-                title: 'Weblink verification completed',
-                text: 'The weblink is valid. You will be redirected shortly.',
-                icon: 'success',
-                allowOutsideClick: false, // Disable closing on background click
-                allowEscapeKey: false,   // Disable closing on ESC key
-                confirmButtonText: 'OK'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Redirect after clicking OK
-                   // window.location.href = 'https://mounarchtech.com/vocoxp/upload_link/thankyou.php';
-                }
-            });
-        </script>
-    ";
-    } elseif ($current_date == $weblink_activated_from) {
-        echo "
-        <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-       
+// Check if the current date is within the range
+if ($current_date >= $weblink_activated_from && $current_date <= $weblink_valid_till) {
      
-     <script>
-            Swal.fire({
-                title: 'Weblink Expired',
-                text: 'The weblink is valid. You will be redirected shortly.',
-                icon: 'error',
-                allowOutsideClick: false, // Disable closing on background click
-                allowEscapeKey: false,   // Disable closing on ESC key
-                confirmButtonText: 'OK'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Redirect after clicking OK
-                    window.location.href = 'https://mounarchtech.com/vocoxp/upload_link/thankyou.php';
-                }
-            });
-        </script>
+} elseif ($current_date > $weblink_valid_till) {
+    echo "
+    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+    <script>
+        Swal.fire({
+            title: 'Weblink Expired',
+            text: 'The weblink has expired. Please contact support.',
+            icon: 'error',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            confirmButtonText: 'OK'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Redirect after clicking OK
+                window.location.href = 'https://mounarchtech.com/vocoxp/upload_link/expired.php';
+            }
+        });
+    </script>
     ";
-
-        // <script>
-        //        Swal.fire({
-        //            title: 'Weblink Expired',
-        //            text: 'The weblink is no longer valid.',
-        //            icon: 'error',
-        //            allowOutsideClick: false,
-        //            allowEscapeKey: false,
-        //            confirmButtonText: 'OK'
-        //        });
-        //    </script>
-    }
-    ?>
+} else {
+    echo "
+    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+    <script>
+        Swal.fire({
+            title: 'Weblink Not Yet Active',
+            text: 'The weblink is not yet active. Please try again later.',
+            icon: 'info',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            confirmButtonText: 'OK'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Redirect after clicking OK
+                window.location.href = 'https://mounarchtech.com/vocoxp/upload_link/web_verification_form.php?enduser_id=".$enduser_id."&t=".time().";
+            }
+        });
+    </script>
+    ";
+}
+?> 
 
     <div id="container" class="container">
         <div class="row">
@@ -195,7 +184,7 @@ $system_date_time = date("Y-m-d H:i:s"); ?>
             <div class="col align-items-center flex-col">
                 <div class="text requested_varification" id="divhtml">
                     <div id="agency_logo">
-                        <img src="<?php echo $agency_logo; ?>" alt="Company Logo" class="logo" width="45%" height="45%">
+                        <img src="<?php echo $agency_logo; ?>" alt="Company Logo" class="logo">
                     </div>
                     <h2>
                         Welcome to <br> <?php echo $company_name; ?>

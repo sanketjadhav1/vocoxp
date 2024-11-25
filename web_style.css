@@ -401,6 +401,21 @@ body {
         text-align: center;
         word-wrap: break-word;
         margin: 20px 0;
-        padding-right: 20%;
+        padding-right: 15%;
+    }
+}
+
+.logo {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    /* overflow: hidden; */
+}
+
+@media (max-width: 768px) {
+    .logo {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
     }
 }

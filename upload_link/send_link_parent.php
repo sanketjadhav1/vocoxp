@@ -16,8 +16,12 @@
         $amount_in_paise = $amount * 100;
         // $key_id = 'rzp_live_jLSe7OELxkMCHf';
         // $secret = 'zGkDGFtbyPqPdYpwCNadvQFw';
-         $key_id = 'rzp_live_wXmbkXPVVABiDl';
-         $secret = 'h0QEqFVRQsYlzhFSgML3Dl2J';
+         // $key_id = 'rzp_live_wXmbkXPVVABiDl';
+         // $secret = 'h0QEqFVRQsYlzhFSgML3Dl2J';
+
+        $key_id = 'rzp_test_EHLRuyAduIUaEe';
+        $secret = 'g62rHYGOgkwDsDseFygZc1GW';
+
         $unique_identifier = uniqid('payment_');
         $api_endpoint = 'https://api.razorpay.com/v1/payment_links';
 

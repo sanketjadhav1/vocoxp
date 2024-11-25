@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amount = $_POST['amount'] ?? '';
     $valid_till = $_POST['valid_till'] ?? '';
     $reminder_sms = $_POST['reminder_sms'] ?? '';
-    $reminder_email = $_POST['reminder_email'] ?? '';
+   $reminder_email = $_POST['reminder_email'] ?? '';
     $upload_id = uniqid(); // Generate a unique ID for the upload
     $fileName = $_FILES['file_name']['name'] ?? '';
 

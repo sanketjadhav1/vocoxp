@@ -8,17 +8,17 @@ class connection
     private $_connection;
     private static $_instance; //The single instance
     /* local */
-     private $_host = "localhost";
+    /* private $_host = "localhost";
       private $_username = "root";
       private $_password = "";
-      private $_database = "mounac53_vocoxp3.0";   //vocoxp3.0
-   /* private $_host = "199.79.62.21";
-    // private $_host = "localhost";
-    private $_username = "mounac53_vocoxp";
-    // private $_username = "root";
-    private $_password = 'mX#&V~o_ksOS';
-    // private $_password = '';
-    private $_database = "mounac53_vocoxp3.0";*/
+      private $_database = "premi682_sales_manager"; */
+    //private $_host = "199.79.62.21";
+     private $_host = "localhost";
+    //private $_username = "mounac53_vocoxp";
+     private $_username = "root";
+    //private $_password = 'mX#&V~o_ksOS';
+     private $_password = '';
+    private $_database = "mounac53_vocoxp3.0";
 
 
 
@@ -68,17 +68,17 @@ class database
     private $_connection1;
     private static $_instance1; //The single instance
     /* local */
-     private $_host = "localhost";
+    /* private $_host = "localhost";
       private $_username = "root";
       private $_password = "";
-      private $_database = "mounac53_centraldb";  //central_db
-  /*  private $_host = "199.79.62.21";
-    // private $_host = "localhost";
-    private $_username = "mounac53_centraldb";
-    // private $_username = "root";
-    private $_password = 'c4nQavOB@j6Z';
-    // private $_password = '';
-    private $_database = "mounac53_centraldb";*/
+      private $_database = "premi682_sales_manager"; */
+    //private $_host = "199.79.62.21";
+     private $_host = "localhost";
+    //private $_username = "mounac53_centraldb";
+     private $_username = "root";
+   // private $_password = 'c4nQavOB@j6Z';
+     private $_password = '';
+    private $_database = "mounac53_centraldb";
 
 
 

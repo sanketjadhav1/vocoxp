@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] != "GET") {
     exit;
 }
 
-$excel_records = "SELECT id, excel_no,stake_holder, type, obj_1, obj_2, obj_3 FROM sample_excel_definations_all";
+$excel_records = "SELECT id, excel_no,stake_holder, type, obj_1, obj_2, obj_3 FROM sample_excel_definations_all Where type_for_excel='1'";
 $geting_excel_records = $mysqli->query($excel_records);
 
 if ($geting_excel_records->num_rows > 0) {

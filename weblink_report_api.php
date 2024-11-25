@@ -2,11 +2,12 @@
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 date_default_timezone_set('Asia/Kolkata');
-
+error_reporting(1);
 include 'connection.php';
 $connection = connection::getInstance();
 $mysqli = $connection->getConnection();
-
+$connection1 = database::getInstance();
+$mysqli1 = $connection1->getConnection();
 if ($_SERVER['REQUEST_METHOD'] == "GET") {
     $agency_id = $_GET['agency_id'];
     $bulk_id = $_GET['bulk_id'];
@@ -34,17 +35,25 @@ if ($_SERVER['REQUEST_METHOD'] == "GET") {
     if ($res_select_query->num_rows > 0) {
         $data = array(); // Initialize an array to hold the fetched data
 
-        // Fetch and format the data
         while ($row = $res_select_query->fetch_assoc()) {
+            $document_type = $row["document_type"];
+            $verification_details = "SELECT * FROM `verification_header_all` WHERE `verification_id`='$document_type'";
+            $details_result = $mysqli1->query($verification_details); 
+            $ver_array = mysqli_fetch_assoc($details_result);
+
+            $ambiguity = $verification_for == 1 ? $row['aadhar_ambiguity'] : $row['pan_ambiguity'];
+            $is_report_ok = strtolower(trim($ambiguity)) === "ok=all" ? "Yes" : "No";
+
             $data[] = array(
                 "end_user_id" => $row["end_user_id"],
                 "name" => $row["first_name"],
-                "verification_type" => $row["document_type"],
-                "is_report_ok" => $verification_for == 1 ? $row['aadhar_ambiguity'] : $row['pan_ambiguity'],
+                "verification_type" => $ver_array["name"],
+                "is_report_ok" => $is_report_ok,
                 "report_url" => $row["report_url"],
                 "completed_on" => $row["completed_on"]
             );
         }
+
 
         // Send a success response with error code 100 and the fetched data
         $response = array(

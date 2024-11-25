@@ -21,16 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['upload-excel'])) {
             $type = $data[1][5] ?? '';
             $excel_no1 = $data[2][5] ?? '';
             $excel_no = $_POST['excel_no'];
-            // if ($excel_no1 !== $excel_no) {
-            //     echo json_encode(['status' => 'error', 'message' => 'Please upload the correct file.']);
-            //     exit;
-            // }
+            if ($excel_no1 !== $excel_no) {
+                echo json_encode(['status' => 'error', 'message' => 'Please upload the correct file.']);
+                exit;
+            }
 
 
-            // if (empty($type)) {
-            //     echo json_encode(['status' => 'error', 'message' => 'Type not found in the uploaded file.']);
-            //     exit;
-            // }
+            if (empty($type)) {
+                echo json_encode(['status' => 'error', 'message' => 'Type not found in the uploaded file.']);
+                exit;
+            }
 
             // Fetch validation rules from the database based on the extracted type
             $type = $db->real_escape_string($type);
@@ -44,24 +44,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['upload-excel'])) {
 
             $result = $db->query($query);
 
-            // if ($result->num_rows > 0) {
-            //     $row = $result->fetch_assoc();
-            //     $rules = [
-            //         $row['excel_verification_rules_1'],
-            //         $row['excel_verification_rules_2'],
-            //         $row['excel_verification_rules_3'],
-            //         $row['excel_verification_rules_4'],
-            //         $row['excel_verification_rules_5'],
-            //         $row['excel_verification_rules_6'],
-            //         $row['excel_verification_rules_7'],
-            //         $row['excel_verification_rules_8'],
-            //         $row['excel_verification_rules_9'],
-            //         $row['excel_verification_rules_10']
-            //     ];
-            // } else {
-            //     echo json_encode(['status' => 'error', 'message' => 'No rules found for the given type.']);
-            //     exit;
-            // }
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $rules = [
+                    $row['excel_verification_rules_1'],
+                    $row['excel_verification_rules_2'],
+                    $row['excel_verification_rules_3'],
+                    $row['excel_verification_rules_4'],
+                    $row['excel_verification_rules_5'],
+                    $row['excel_verification_rules_6'],
+                    $row['excel_verification_rules_7'],
+                    $row['excel_verification_rules_8'],
+                    $row['excel_verification_rules_9'],
+                    $row['excel_verification_rules_10']
+                ];
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'No rules found for the given type.']);
+                exit;
+            }
 
             $headerRow = $data[5] ?? [];
 

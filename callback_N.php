@@ -1,18 +1,8 @@
 <?php
-
-include 'connection.php';
-$connection = connection::getInstance();
-$mysqli = $connection->getConnection();
-$connection1 = database::getInstance();
-$mysqli1 = $connection1->getConnection();
-$system_datetime = date("Y-m-d H:i:s");
-
 // Capture the raw POST data
 $payload = file_get_contents('php://input');
 $webhookData = json_decode($payload, true);
-
-// Verify if Razorpay webhook secret is set and valid
-$webhookSecret = "ramesh"; // Replace with your Razorpay webhook secret
+$webhookSecret = "ramesh"; // Replace with Razorpay's webhook secret
 $headers = getallheaders();
 $razorpaySignature = $headers['X-Razorpay-Signature'] ?? '';
 
@@ -21,30 +11,40 @@ if (!validateWebhookSignature($payload, $razorpaySignature, $webhookSecret)) {
     http_response_code(400); // Invalid signature
     exit('Webhook signature verification failed');
 }
-// Check if the event type is "payment.captured"
-if (isset($webhookData['event']) && $webhookData['event'] === 'payment.captured') {
-    // Proceed only if the payment is captured
-$statusMessage = "Payment captured for order: " . $webhookData['payload']['payment']['entity']['order_id'];
-    $timestamp = date("Y-m-d H:i:s");
 
-    $sql = "INSERT INTO temporary_table_for_callback (status_message, timestamp) VALUES (?, ?)";
-    $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("ss", $statusMessage, $timestamp);
+// Process only the "payment.captured" event
+if (isset($webhookData['event']) && $webhookData['event'] === 'payment.captured') {
+    $orderId = $webhookData['payload']['payment']['entity']['order_id'];
+
+    // Update payment status in the database
+    // $conn = new mysqli('db_host', 'db_user', 'db_pass', 'db_name');
+// $conn = new mysqli('199.79.62.21', 'mounac53_vocoxp', 'mX#&V~o_ksOS', 'mounac53_vocoxp3.0'); // replace with actual credentials
+   // Database connection
+$conn = new mysqli('199.79.62.21', 'mounac53_vocoxp', 'mX#&V~o_ksOS', 'mounac53_vocoxp3.0');
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+    $sql = "UPDATE temporary_table_for_callback SET status = 'captured' WHERE order_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $orderId);
 
     if ($stmt->execute()) {
         echo "Success";
     } else {
         http_response_code(500);
-        echo "Error: " . $stmt->error;
+        echo "Database update failed";
     }
 
     $stmt->close();
     $conn->close();
-} else {
-    // Ignore other webhook events
-    http_response_code(200);
-    exit('Event ignored');
 }
 
+// Function to validate Razorpay webhook signature
+function validateWebhookSignature($payload, $signature, $secret) {
+    $expectedSignature = hash_hmac('sha256', $payload, $secret);
+    return hash_equals($expectedSignature, $signature);
+}
 ?>
-

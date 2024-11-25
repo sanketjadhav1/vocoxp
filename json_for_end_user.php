@@ -9,8 +9,44 @@ $mysqli1 = $connection1->getConnection();
 if ($_SERVER['REQUEST_METHOD'] == "GET") {
     $bulk_id = $_GET['bulk_id'];
     $agency_id = $_GET['agency_id'];
+    $query_delete = "DELETE FROM `bulk_end_user_transaction_all` WHERE `agency_id`='$agency_id' AND `bulk_id`='$bulk_id' AND `name`=''";
+    $res_query_delete = mysqli_query($mysqli, $query_delete);
+                     
+    $fetch_setting = "SELECT 
+    b.*
+FROM 
+    bulk_end_user_transaction_all b
+LEFT JOIN 
+    (
+        -- Get the primary end_user_id for each email based on payment status
+        SELECT 
+            e.email_id,
+            e.end_user_id AS primary_end_user_id
+        FROM 
+            bulk_end_user_transaction_all e
+        INNER JOIN 
+            end_user_payment_transaction_all p
+        ON 
+            e.end_user_id = p.end_user_id
+        WHERE 
+            e.email_id != ''
+            AND p.status = 'success' -- Adjust based on your payment success condition
+        GROUP BY 
+            e.email_id
+    ) p
+ON 
+    b.email_id = p.email_id
+WHERE 
+    (p.primary_end_user_id IS NULL OR b.end_user_id = p.primary_end_user_id)
+    AND b.bulk_id = '$bulk_id'
+    AND b.agency_id = '$agency_id'
+GROUP BY 
+    CASE 
+        WHEN b.email_id = '' THEN b.end_user_id 
+        ELSE b.email_id 
+    END;
 
-    $fetch_setting = "SELECT * FROM `bulk_end_user_transaction_all` WHERE `agency_id`='$agency_id' AND `bulk_id`='$bulk_id'";
+";
     $res_setting = mysqli_query($mysqli, $fetch_setting);
 
     $data = array();

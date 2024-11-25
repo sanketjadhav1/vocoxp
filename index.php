@@ -1,6 +1,6 @@
 <?php
 
-include_once 'connection.php';
+include_once '../connection.php';
 
 // error_reporting(E_ALL & ~E_DEPRECATED);
 

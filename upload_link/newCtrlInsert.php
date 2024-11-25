@@ -12,7 +12,8 @@ $connection = connection::getInstance();
 $mysqli = $connection->getConnection();
 
 $system_datetime = date("Y-m-d H:i:s");
-
+// var_dump($_POST);
+// die();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $agency_id = $_POST['agency_id'] ?? '';
     $bulk_id = $_POST['bulk_id'] ?? '';
@@ -33,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($amount === "agency_wallet") {
         $jsonString = $_POST['table1'] ?? '';
+        $total_revenue = $_POST['total_revenue'] ?? '';
         $table1 = json_decode($jsonString, true);
         $paid_by = 1;
     } else {
@@ -260,9 +262,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $column_client = rtrim($column_client, ', ');
         $combined_columns = $column_mi . ', ' . $column_client;
        
+       $select_tentative = "SELECT `tentative_amount` FROM `agency_header_all` WHERE `agency_id`='$agency_id' ";
+    $res_select_tentative = $mysqli->query($select_tentative);
+    $rowselect_tentative = $res_select_tentative->fetch_assoc();
+        $tentative_amount = ($rowselect_tentative['tentative_amount']*1) + ($total_revenue*1);
+
+       $query1 = "UPDATE `agency_header_all` 
+          SET  `tentative_amount`='$total_revenue'
+          WHERE `agency_id` = '$agency_id'";
+          // die();
+        $res_query1 = mysqli_query($mysqli, $query1);
 
          $query = "UPDATE `bulk_weblink_request_all` 
-          SET $combined_columns 
+          SET $combined_columns , `tentative_amount`='$total_revenue'
           WHERE `bulk_id` = '$bulk_id' 
           AND `agency_id` = '$agency_id'";
           // die();
@@ -359,13 +371,15 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
         $mail->Subject = 'Action Required: Complete Your Verification Data';
 
         $insert_end_user = "
-        INSERT INTO `bulk_end_user_transaction_all` (`agency_id`, `bulk_id`, `upload_id`, `end_user_id`, `excel_no`, `obj_no`, `obj_name` , `name`, `mobile`, `email_id`, `enroll_no`, `status`, `scheduled_verifications`, `reminder_email`, `reminder_sms`, `payment_from`, `ref_enduser_id`)
-        
+        INSERT INTO `bulk_end_user_transaction_all` (`agency_id`, `bulk_id`, `upload_id`, `end_user_id`, `excel_no`, `obj_no`, `obj_name` , `name`, `mobile`, `email_id`, `enroll_no`, `status`, `scheduled_verifications`, `reminder_email`, `reminder_sms`, `payment_from`, `ref_enduser_id`)        
         VALUES ";
 
         $values = [];
         foreach ($data as $index => $row) {
-            if ($index < 6) continue;
+
+            if ($index <= 5 || empty($row[1])) { continue; } 
+            
+
             if ($type == 'Hostel Registration' || $excel_no == 1043) {
                 
                 $names = [];
@@ -385,9 +399,22 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
 
                 $roles = ["Resident", "Parent", "Local Guardian"];
                
-                $end_user_ids = [];
-                for ($i = 0; $i < 3; $i++) {
-                    $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
+               $end_user_ids = [];
+                $valid_roles = [];
+                // for ($i = 0; $i < 3; $i++) {
+                //     $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
+                // }
+                //For removing extra enduser id when there is no verification is selected for any object. eg: if verification is not selected for Mother and there is data in excel for mother column also then this code will skip Mother data to be inserted in db.
+                for ($i = 0, $j = 1; $i < 3; $i++, $j++) {
+                    $verification_key = "obj_" . $j . "_verifications";
+
+                    if (!empty($weblink_array[$verification_key])) {
+                        // Generate unique ID only if the verification is selected
+                        $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
+                        $valid_roles[] = $roles[$i]; // Track corresponding role
+                    } else {
+                        $end_user_ids[$i] = null; // Keep alignment consistent with $roles
+                    }
                 }
 
                 // Add values for the current row
@@ -400,11 +427,20 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                     $obj_num=$j;
 
                     $strr="obj_".$j."_verifications";
-
+                    // Check if the current field is empty
+                    if (empty($weblink_array[$strr])) {
+                        // Skip this iteration if the field is empty
+                        continue;
+                    }
                     if($name!=''){
-                        $ref_enduser_ids = implode(",", array_diff($end_user_ids, [$end_user_ids[$i]]));
+                        $ref_enduser_ids = array_filter($end_user_ids, function ($id, $index) use ($i) {
+                            // Exclude the current role and null IDs
+                            return $id !== null && $index !== $i;
+                        }, ARRAY_FILTER_USE_BOTH);
+
+                        $ref_enduser_ids_str = implode(",", $ref_enduser_ids);
                     
-                    $values[] = "('$agency_id', '$bulk_id', '$upload_id', '{$end_user_ids[$i]}', '$excel_no', '$obj_num','$role','$name', '$mobile', '$email', '', '0', '$weblink_array[$strr]', '$reminder_email', '$reminder_sms', '$paid_by','$ref_enduser_ids')";
+                    $values[] = "('$agency_id', '$bulk_id', '$upload_id', '{$end_user_ids[$i]}', '$excel_no', '$obj_num','$role','$name', '$mobile', '$email', '', '0', '$weblink_array[$strr]', '$reminder_email', '$reminder_sms', '$paid_by','$ref_enduser_ids_str')";
                     if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                         $mail->addAddress($email);  // Add the recipient email
     
@@ -449,7 +485,7 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                             <div class="email-content">
                                 <p>Dear Recipient,</p>
                                 <p>Please click on the link below to access your member profile and complete the data required for verification. This link is valid for 24 hours only for security reasons:</p>
-                                <p><a href="https://mounarchtech.com/vocoxp/bulk_welcome_screen.php?enduser_id=' . $end_user_ids[$i] . '">Click here to complete your verification</a></p>
+                                <p><a href="https://mounarchtech.com/vocoxp/upload_link/web_verification_form.php?enduser_id=' . $end_user_ids[$i] . '">Click here to complete your verification</a></p>
                                 <p>If you have any questions or require assistance, please don\'t hesitate to reach out to our support team at <a href="mailto:support@microintegrated.in">support@microintegrated.in</a>.</p>
                                 <p>Thank you for your time and cooperation.</p>
                                 <p><b>Best regards,</b></p>
@@ -477,6 +513,7 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                     }
                 }
             } else if ($type == 'Students - Above 16 Yrs' || $excel_no == 1035) {
+                // print_r($row); 
                 $names = [];
                 foreach ($nameIndices as $nameIndex) {
                     $names[] = $row[$nameIndex] ?? '';
@@ -495,12 +532,25 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                 foreach ($rollnum as $rollIndex) {
                     $roll_number[] = !empty($row[$rollIndex]) ? trim($row[$rollIndex]) : '';
                 }
-                $roles = ["Student", "Parent"];
-                $end_user_ids = [];
-                for ($i = 0; $i < 2; $i++) {
-                    $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
-                }
 
+                $roles = ["Student", "Parent"];
+                                $end_user_ids = [];
+                $valid_roles = [];
+                // for ($i = 0; $i < 3; $i++) {
+                //     $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
+                // }
+                //For removing extra enduser id when there is no verification is selected for any object. eg: if verification is not selected for Mother and there is data in excel for mother column also then this code will skip Mother data to be inserted in db.
+              for ($i = 0, $j = 1; $i < 3; $i++, $j++) {
+                    $verification_key = "obj_" . $j . "_verifications";
+
+                    if (!empty($weblink_array[$verification_key])) {
+                        // Generate unique ID only if the verification is selected
+                        $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
+                        $valid_roles[] = $roles[$i]; // Track corresponding role
+                    } else {
+                        $end_user_ids[$i] = null; // Keep alignment consistent with $roles
+                    }
+                }
                 // Add values for the current row (2 records)
                 for ($i = 0, $j=1; $i < 2; $i++,$j++) {
                     $name = $names[$i] ?? '';
@@ -510,12 +560,23 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                     $role = $roles[$i];
                     $obj_num=$j;
                     $strr="obj_".$j."_verifications";
-                    
+                     // Check if the current field is empty
+                    if (empty($weblink_array[$strr])) {
+                        // Skip this iteration if the field is empty
+                        continue;
+                    }
                     // Only add to values array if name, mobile, and email are not empty
                     // if (!empty($name) && !empty($mobile) && !empty($email)) {
-                    $ref_enduser_ids = implode(",", array_diff($end_user_ids, [$end_user_ids[$i]]));
+                   
+                       
+                        $ref_enduser_ids = array_filter($end_user_ids, function ($id, $index) use ($i) {
+                            // Exclude the current role and null IDs
+                            return $id !== null && $index !== $i;
+                        }, ARRAY_FILTER_USE_BOTH);
 
-                        $values[] = "('$agency_id', '$bulk_id', '$upload_id', '{$end_user_ids[$i]}', '$excel_no', '$obj_num','$role','$name', '$mobile', '$email', '$roll', '0', '$weblink_array[$strr]', '$reminder_email', '$reminder_sms', '$paid_by','$ref_enduser_ids')";
+                        $ref_enduser_ids_str = implode(",", $ref_enduser_ids);
+
+                        $values[] = "('$agency_id', '$bulk_id', '$upload_id', '{$end_user_ids[$i]}', '$excel_no', '$obj_num','$role','$name', '$mobile', '$email', '$roll', '0', '$weblink_array[$strr]', '$reminder_email', '$reminder_sms', '$paid_by','$ref_enduser_ids_str')";
                         if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                             $mail->addAddress($email);  // Add the recipient email
         
@@ -560,7 +621,7 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                                 <div class="email-content">
                                     <p>Dear Recipient,</p>
                                     <p>Please click on the link below to access your member profile and complete the data required for verification. This link is valid for 24 hours only for security reasons:</p>
-                                    <p><a href="https://mounarchtech.com/vocoxp/bulk_welcome_screen.php?enduser_id=' . $end_user_ids[$i] . '">Click here to complete your verification</a></p>
+                                    <p><a href="https://mounarchtech.com/vocoxp/upload_link/web_verification_form.php?enduser_id=' . $end_user_ids[$i] . '">Click here to complete your verification</a></p>
                                     <p>If you have any questions or require assistance, please don\'t hesitate to reach out to our support team at <a href="mailto:support@microintegrated.in">support@microintegrated.in</a>.</p>
                                     <p>Thank you for your time and cooperation.</p>
                                     <p><b>Best regards,</b></p>
@@ -631,10 +692,21 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                 }
                 $roles = ["Student", "Father", "Mother"];
                 $end_user_ids = [];
-                for ($i = 0; $i < 3; $i++) {
-                    $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
-                }
+                $valid_roles = [];
 
+                // Generate `end_user_ids` only for verified roles
+                for ($i = 0, $j = 1; $i < 3; $i++, $j++) {
+                    $verification_key = "obj_" . $j . "_verifications";
+
+                    if (!empty($weblink_array[$verification_key])) {
+                        // Generate unique ID only if the verification is selected
+                        $end_user_ids[$i] = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
+                        $valid_roles[] = $roles[$i]; // Track corresponding role
+                    } else {
+                        $end_user_ids[$i] = null; // Keep alignment consistent with $roles
+                    }
+                }
+              
                 // Add values for the current row
                 for ($i = 0,$j=1; $i < 3; $i++,$j++) {
                     $name = $names[$i] ?? '';                     
@@ -643,9 +715,22 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                     $email = $emails[$i] ?? '';
                     $role = $roles[$i];
                     $strr="obj_".$j."_verifications";
-                    $obj_num = $j;
-                        $ref_enduser_ids = implode(",", array_diff($end_user_ids, [$end_user_ids[$i]]));
-                        $values[] = "('$agency_id', '$bulk_id', '$upload_id', '{$end_user_ids[$i]}', '$excel_no', '$obj_num','$role','$name', '$mobile', '$email', '$roll', '0', '$weblink_array[$strr]', '$reminder_email', '$reminder_sms', '$paid_by','$ref_enduser_ids')";
+                     // echo $email;
+                    // Check if the current field is empty
+                    if (empty($weblink_array[$strr])) {
+                        // Skip this iteration if the field is empty
+                        continue;
+                    }
+
+                 
+                        $obj_num = $j;
+                        $ref_enduser_ids = array_filter($end_user_ids, function ($id, $index) use ($i) {
+                            // Exclude the current role and null IDs
+                            return $id !== null && $index !== $i;
+                        }, ARRAY_FILTER_USE_BOTH);
+
+                        $ref_enduser_ids_str = implode(",", $ref_enduser_ids);
+                        $values[] = "('$agency_id', '$bulk_id', '$upload_id', '{$end_user_ids[$i]}', '$excel_no', '$obj_num','$role','$name', '$mobile', '$email', '$roll', '0', '$weblink_array[$strr]', '$reminder_email', '$reminder_sms', '$paid_by','$ref_enduser_ids_str')";
                         if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                             $mail->addAddress($email);  
                             $mail->Body = '<!DOCTYPE html>
@@ -720,7 +805,7 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                     $roll = '';
                     
                 } else if ($type == 'Employees / Teachers' || $excel_no == 1036) {
-                    $role = 'Employee';
+                    $role = 'Employees / Teachers';
                     $roll = '';
                 foreach ($empnum as $empIndex) {
                     $roll =  trim($row[$empIndex]);
@@ -758,6 +843,7 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                 
              $obj_num='1';
                                 $strr="obj_1_verifications";
+
                 // echo "name = " . $name . " Email =  " . $email . "Mobile = " . $mobile . "Role = " . $role;
                 $end_user_id = unique_id_generate_bulk('END', 'bulk_end_user_transaction_all', $mysqli, "end_user_id");
                 // echo "Generated end_user_id for user $i: " . $end_user_id . "\n";
@@ -820,7 +906,7 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
                      <div class="email-content">
                             <p>Dear Recipient,</p>
                             <p>Please click on the link below to access your member profile and complete the data required for verification. This link is valid for 24 hours only for security reasons:</p>
-                            <p><a href="https://mounarchtech.com/vocoxp/bulk_welcome_screen.php?enduser_id=' . $end_user_id . '">Click here to complete your verification</a></p>
+                            <p><a href="https://mounarchtech.com/vocoxp/upload_link/web_verification_form.php?enduser_id=' . $end_user_id . '">Click here to complete your verification</a></p>
                             <p>If you have any questions or require assistance, please don\'t hesitate to reach out to our support team at <a href="mailto:support@microintegrated.in">support@microintegrated.in</a>.</p>
                             <p>Thank you for your time and cooperation.</p>
                             <p><b>Best regards,</b></p>
@@ -837,20 +923,10 @@ $select_date = "SELECT `upload_weblink_generated_on` FROM `bulk_weblink_request_
         }
             if (!empty($values)) { 
                 $insert_end_user .= implode(", ", $values);
-                echo $insert_end_user;
-        
+                
+        echo $insert_end_user;
                 // Insert end user data
                 $res_end_user = mysqli_query($mysqli, $insert_end_user);
-        
-                // Fetch web link details
-                // $weblink_details = "SELECT `verifications` FROM `bulk_weblink_request_all` WHERE `bulk_id` = '$bulk_id'";
-                // $weblink_result = $mysqli->query($weblink_details);
-                // $weblink_array = mysqli_fetch_assoc($weblink_result);
-                // $verifications = $weblink_array['verifications'];
-        
-                // Update end user records with scheduled verifications
-                // $update_end_details = "UPDATE `bulk_end_user_transaction_all` SET `scheduled_verifications`='$verifications' WHERE `bulk_id`='$bulk_id'";
-                // $res_update = mysqli_query($mysqli, $update_end_details);
         
                 if ($res_end_user) {
                     $rows_inserted = true;

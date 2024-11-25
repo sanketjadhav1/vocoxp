@@ -68,7 +68,8 @@ if ($getSinglerecordQuery->num_rows > 0) {
 
     // Convert 'operational_from' to dd-mm-yyyy format if it's not empty
     if (!empty($data['operational_from'])) {
-        $data['operational_from'] = date('d-m-Y', strtotime($data['operational_from']));
+         $date = new DateTime($data['operational_from']);
+        $data['operational_from'] = $date->format('d/m/Y');
     }
 
     // Return data as an associative array
@@ -111,7 +112,7 @@ if ($getSinglerecordQuery->num_rows > 0) {
     while($row = $getSinglerecordQuery->fetch_assoc()) {
            if (!empty($row['operational_from'])) {
             $date = new DateTime($row['operational_from']);
-            $row['operational_from'] = $date->format('d-m-Y');
+            $row['operational_from'] = $date->format('d/m/Y');
         }
 
         $data[] = $row; 

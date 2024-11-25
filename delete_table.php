@@ -81,7 +81,7 @@ $ver_result = $mysqli->query($ver_query);
   $base_amount=$select_array['base_amount']."<br>";
             $cgst_amount=$select_array['cgst_amount']."<br>";
             $sgst_amount=$select_array['sgst_amount']."<br>";
-        $select_count = "SELECT Count(*) as count FROM `wallet_payment_transaction_all` WHERE `verification_id` = '$verification_id' AND `agency_id` = '$agency_id' AND DATE_FORMAT(transaction_on, '%m-%d') = DATE_FORMAT('$current_date', '%m-%d')";
+        $select_count = "SELECT Count(*) as count FROM `wallet_payment_transaction_all` WHERE `verification_id` = '$verification_id' AND `requested_from`='2' AND `agency_id` = '$agency_id' AND DATE_FORMAT(transaction_on, '%m-%d') = DATE_FORMAT('$current_date', '%m-%d')";
           $count_result = $mysqli->query($select_count);
             $count_array = mysqli_fetch_assoc($count_result);
            $count=$select_array['count']."<br>";

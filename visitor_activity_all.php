@@ -10,7 +10,7 @@ error_reporting(0);
 include __DIR__ . '/vendor/autoload.php';
 include_once 'connection.php';
 error_reporting(E_ALL & ~E_DEPRECATED);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 
 // Initialize database connections
 $connection = connection::getInstance();
@@ -99,8 +99,39 @@ if ($check_error == 1) {
         if (isValidAadhar($aadhar_number) == 1) {
             $query = "INSERT INTO `visitor_temp_activity_detail_all`(`agency_id`, `visitor_id`, `visitor_location_id`, `requested_on`, `verification_type`, `mode`, `meeting_with`, `meeting_status`, `request_link_url`, `sms_status`, `email_status`, `approved_on`, `rejected_on`, `final_status`, `first_name`, `last_name`, `aadhar_number`, `pan_number`, `dl_number`, `voter_number`, `passport_number`, `father_name`, `mother_name`, `spouse_name`, `gender`, `dob`, `blood_group`, `address`, `country_code`, `state_name`, `nationality`, `front_photo`, `back_photo`, `user_photo`, `cover_photo`, `date_of_issue`, `date_of_expiry`, `place_of_issue`, `classes_of_vehicle`, `polling_details`, `republic_of_india`, `passport_type`, `file_number`, `visitor_name`, `visitor_email`, `people_with_visitor`,`visitor_mobile`) VALUES ('$agency_id','$visitor_id','$visitor_location_id','$requested_on','$verification_type','$mode','$meeting_with','1','','','','','','','$first_name','$last_name','$aadhar_number','','','','','','','','$gender','$dob','','$address','','','','$front_img','$back_img','$user_img','','','','','','','','','','$visitor_name','$visitor_email','$people_with_visitor','$mobile_no')";
             $res = mysqli_query($mysqli, $query);
+            $sql_query=mysqli_query($mysqli,"SELECT * FROM `employee_header_all` WHERE emp_id='$meeting_with'");
+            $row_emp=mysqli_fetch_assoc($sql_query);
+            $visitor_approval_required="";
+            $visiting_charges="";
+            $verification_paid_by="";
+            if($row_emp["visitor_approval_required"]==1)
+            {
+                $visitor_approval_required="Y";
+            }
+            else
+            {
+                $visitor_approval_required="N";
 
-            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img];
+            }
+            if($row_emp["visiting_charges"]==1)
+            {
+                $visiting_charges="Y";
+            }
+            else
+            {
+                $visiting_charges="N";
+
+            }
+             if($row_emp["verification_paid_by"]=='W')
+            {
+                $verification_paid_by="W";
+            }
+            else
+            {
+                $verification_paid_by="E";
+
+            }
+            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img,"visitor_approval_required"=>$visitor_approval_required,"visiting_charges"=>$visiting_charges,"verification_paid_by"=>$verification_paid_by];
             $response = array("error_code" => 100, "message" => "Visitor  record successfully added.","data"=>$data);
             echo json_encode($response);
             return;
@@ -116,7 +147,41 @@ if ($check_error == 1) {
         if (isValidPAN($pan_number) == 1) {
             $query = "INSERT INTO `visitor_temp_activity_detail_all`(`agency_id`, `visitor_id`, `visitor_location_id`, `requested_on`, `verification_type`, `mode`, `meeting_with`, `meeting_status`, `request_link_url`, `sms_status`, `email_status`, `approved_on`, `rejected_on`, `final_status`, `first_name`, `last_name`, `aadhar_number`, `pan_number`, `dl_number`, `voter_number`, `passport_number`, `father_name`, `mother_name`, `spouse_name`, `gender`, `dob`, `blood_group`, `address`, `country_code`, `state_name`, `nationality`, `front_photo`, `back_photo`, `user_photo`, `cover_photo`, `date_of_issue`, `date_of_expiry`, `place_of_issue`, `classes_of_vehicle`, `polling_details`, `republic_of_india`, `passport_type`, `file_number`, `visitor_name`, `visitor_email`, `people_with_visitor`,`visitor_mobile`) VALUES ('$agency_id','$visitor_id','$visitor_location_id','$requested_on','$verification_type','$mode','$meeting_with','1','','','','','','','$first_name','$last_name','','$pan_number','','','' ,'$father_name','','','','$dob','','$address','','','','$front_img','','$user_img','','','','','','','','','','$visitor_name','$visitor_email','$people_with_visitor','$mobile_no')";
             $res = mysqli_query($mysqli, $query);
-             $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img];
+            $res = mysqli_query($mysqli, $query);
+
+            $sql_query=mysqli_query($mysqli,"SELECT * FROM `employee_header_all` WHERE emp_id='$meeting_with'");
+           $row_emp=mysqli_fetch_assoc($sql_query);
+            $visitor_approval_required="";
+            $visiting_charges="";
+            $verification_paid_by="";
+            if($row_emp["visitor_approval_required"]==1)
+            {
+                $visitor_approval_required="Y";
+            }
+            else
+            {
+                $visitor_approval_required="N";
+
+            }
+            if($row_emp["visiting_charges"]==1)
+            {
+                $visiting_charges="Y";
+            }
+            else
+            {
+                $visiting_charges="N";
+
+            }
+             if($row_emp["verification_paid_by"]=='W')
+            {
+                $verification_paid_by="W";
+            }
+            else
+            {
+                $verification_paid_by="E";
+
+            }
+            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img,"visitor_approval_required"=>$visitor_approval_required,"visiting_charges"=>$visiting_charges,"verification_paid_by"=>$verification_paid_by];
             $response = array("error_code" => 100, "message" => "Visitor  record successfully added.","data"=>$data);
             echo json_encode($response);
             return;
@@ -141,7 +206,39 @@ if ($check_error == 1) {
             $state_name = $_POST['state_name'] ?? "";  
             $query = "INSERT INTO `visitor_temp_activity_detail_all`(`agency_id`, `visitor_id`, `visitor_location_id`, `requested_on`, `verification_type`, `mode`, `meeting_with`, `meeting_status`, `request_link_url`, `sms_status`, `email_status`, `approved_on`, `rejected_on`, `final_status`, `first_name`, `last_name`, `aadhar_number`, `pan_number`, `dl_number`, `voter_number`, `passport_number`, `father_name`, `mother_name`, `spouse_name`, `gender`, `dob`, `blood_group`, `address`, `country_code`, `state_name`, `nationality`, `front_photo`, `back_photo`, `user_photo`, `cover_photo`, `date_of_issue`, `date_of_expiry`, `place_of_issue`, `classes_of_vehicle`, `polling_details`, `republic_of_india`, `passport_type`, `file_number`, `visitor_name`, `visitor_email`, `people_with_visitor`,`visitor_mobile`) VALUES ('$agency_id','$visitor_id','$visitor_location_id','$requested_on','$verification_type','$mode','$meeting_with','1','','','','','','','$first_name','$last_name','','','$dl_number','','','$father_name','','','','$dob','','$address','','$state_name','','$front_img','','$user_img','','$date_of_issue','$date_of_expiry','','$classes_of_vehicle','','','','','$visitor_name','$visitor_email','$people_with_visitor','$mobile_no')";
             $res = mysqli_query($mysqli, $query);
-            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img];
+            $sql_query=mysqli_query($mysqli,"SELECT * FROM `employee_header_all` WHERE emp_id='$meeting_with'");
+           $row_emp=mysqli_fetch_assoc($sql_query);
+            $visitor_approval_required="";
+            $visiting_charges="";
+            $verification_paid_by="";
+            if($row_emp["visitor_approval_required"]==1)
+            {
+                $visitor_approval_required="Y";
+            }
+            else
+            {
+                $visitor_approval_required="N";
+
+            }
+            if($row_emp["visiting_charges"]==1)
+            {
+                $visiting_charges="Y";
+            }
+            else
+            {
+                $visiting_charges="N";
+
+            }
+             if($row_emp["verification_paid_by"]=='W')
+            {
+                $verification_paid_by="W";
+            }
+            else
+            {
+                $verification_paid_by="E";
+
+            }
+            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img,"visitor_approval_required"=>$visitor_approval_required,"visiting_charges"=>$visiting_charges,"verification_paid_by"=>$verification_paid_by];
             $response = array("error_code" => 100, "message" => "Visitor  record successfully added.","data"=>$data);
             echo json_encode($response);
             return;
@@ -159,7 +256,39 @@ if ($check_error == 1) {
             $polling_details = $_POST['polling_details'] ?? "";  
             $query = "INSERT INTO `visitor_temp_activity_detail_all`(`agency_id`, `visitor_id`, `visitor_location_id`, `requested_on`, `verification_type`, `mode`, `meeting_with`, `meeting_status`, `request_link_url`, `sms_status`, `email_status`, `approved_on`, `rejected_on`, `final_status`, `first_name`, `last_name`, `aadhar_number`, `pan_number`, `dl_number`, `voter_number`, `passport_number`, `father_name`, `mother_name`, `spouse_name`, `gender`, `dob`, `blood_group`, `address`, `country_code`, `state_name`, `nationality`, `front_photo`, `back_photo`, `user_photo`, `cover_photo`, `date_of_issue`, `date_of_expiry`, `place_of_issue`, `classes_of_vehicle`, `polling_details`, `republic_of_india`, `passport_type`, `file_number`, `visitor_name`, `visitor_email`, `people_with_visitor`,`visitor_mobile`) VALUES ('$agency_id','$visitor_id','$visitor_location_id','$requested_on','$verification_type','$mode','$meeting_with','1','','','','','','','$first_name','$last_name','','','','$voter_number','','$father_name','','','','$dob','','$address','','$state_name','','$front_img','$back_img','$user_img','','','','','','','','','','$visitor_name','$visitor_email','$people_with_visitor','$mobile_no')";
             $res = mysqli_query($mysqli, $query);
-            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img];
+             $sql_query=mysqli_query($mysqli,"SELECT * FROM `employee_header_all` WHERE emp_id='$meeting_with'");
+           $row_emp=mysqli_fetch_assoc($sql_query);
+            $visitor_approval_required="";
+            $visiting_charges="";
+            $verification_paid_by="";
+            if($row_emp["visitor_approval_required"]==1)
+            {
+                $visitor_approval_required="Y";
+            }
+            else
+            {
+                $visitor_approval_required="N";
+
+            }
+            if($row_emp["visiting_charges"]==1)
+            {
+                $visiting_charges="Y";
+            }
+            else
+            {
+                $visiting_charges="N";
+
+            }
+             if($row_emp["verification_paid_by"]=='W')
+            {
+                $verification_paid_by="W";
+            }
+            else
+            {
+                $verification_paid_by="E";
+
+            }
+            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img,"visitor_approval_required"=>$visitor_approval_required,"visiting_charges"=>$visiting_charges,"verification_paid_by"=>$verification_paid_by];
             $response = array("error_code" => 100, "message" => "Visitor  record successfully added.","data"=>$data);
             echo json_encode($response);
             return;
@@ -190,7 +319,39 @@ if ($check_error == 1) {
          $query = "INSERT INTO `visitor_temp_activity_detail_all`(`agency_id`, `visitor_id`, `visitor_location_id`, `requested_on`, `verification_type`, `mode`, `meeting_with`, `meeting_status`, `request_link_url`, `sms_status`, `email_status`, `approved_on`, `rejected_on`, `final_status`, `first_name`, `last_name`, `aadhar_number`, `pan_number`, `dl_number`, `voter_number`, `passport_number`, `father_name`, `mother_name`, `spouse_name`, `gender`, `dob`, `blood_group`, `address`, `country_code`, `state_name`, `nationality`, `front_photo`, `back_photo`, `user_photo`, `cover_photo`, `date_of_issue`, `date_of_expiry`, `place_of_issue`, `classes_of_vehicle`, `polling_details`, `republic_of_india`, `passport_type`, `file_number`, `visitor_name`, `visitor_email`, `people_with_visitor`,`visitor_mobile`) VALUES ('$agency_id','$visitor_id','$visitor_location_id','$requested_on','$verification_type','$mode','$meeting_with','1','','','','','','','$first_name','$last_name','','','','','$passport_number','$father_name','$mother_name','$spouse_name','$gender','$dob','','$address','$country_code','','$nationality','$front_img','$back_img','$user_img','$cover_img','$date_of_issue','$date_of_expiry','$place_of_issue','','','$republic_of_india','$passport_type','$file_number','$visitor_name','$visitor_email','$people_with_visitor','$mobile_no')";  
         
         $res = mysqli_query($mysqli, $query);
-        $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img];
+         $sql_query=mysqli_query($mysqli,"SELECT * FROM `employee_header_all` WHERE emp_id='$meeting_with'");
+           $row_emp=mysqli_fetch_assoc($sql_query);
+            $visitor_approval_required="";
+            $visiting_charges="";
+            $verification_paid_by="";
+            if($row_emp["visitor_approval_required"]==1)
+            {
+                $visitor_approval_required="Y";
+            }
+            else
+            {
+                $visitor_approval_required="N";
+
+            }
+            if($row_emp["visiting_charges"]==1)
+            {
+                $visiting_charges="Y";
+            }
+            else
+            {
+                $visiting_charges="N";
+
+            }
+             if($row_emp["verification_paid_by"]=='W')
+            {
+                $verification_paid_by="W";
+            }
+            else
+            {
+                $verification_paid_by="E";
+
+            }
+            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img,"visitor_approval_required"=>$visitor_approval_required,"visiting_charges"=>$visiting_charges,"verification_paid_by"=>$verification_paid_by];
         $response = array("error_code" => 100, "message" => "Visitor added successfully.","data"=>$data);
         echo json_encode($response);
         return;
@@ -277,13 +438,39 @@ if ($check_error == 1) {
         $res = mysqli_query($mysqli, $query);
     
         if ($res) {
-            $data[] = [
-                "visitor_id" => $visitor_id,
-                "visitor_name" => $visitor_name,
-                "employee_id" => $meeting_with,
-                "visitor_mobile" => $mobile_no,
-                "visitor_photo" => $user_img
-            ];
+             $sql_query=mysqli_query($mysqli,"SELECT * FROM `employee_header_all` WHERE emp_id='$meeting_with'");
+           $row_emp=mysqli_fetch_assoc($sql_query);
+            $visitor_approval_required="";
+            $visiting_charges="";
+            $verification_paid_by="";
+            if($row_emp["visitor_approval_required"]==1)
+            {
+                $visitor_approval_required="Y";
+            }
+            else
+            {
+                $visitor_approval_required="N";
+
+            }
+            if($row_emp["visiting_charges"]==1)
+            {
+                $visiting_charges="Y";
+            }
+            else
+            {
+                $visiting_charges="N";
+
+            }
+             if($row_emp["verification_paid_by"]=='W')
+            {
+                $verification_paid_by="W";
+            }
+            else
+            {
+                $verification_paid_by="E";
+
+            }
+            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img,"visitor_approval_required"=>$visitor_approval_required,"visiting_charges"=>$visiting_charges,"verification_paid_by"=>$verification_paid_by];
             $response = array("error_code" => 100, "message" => "Visitor added successfully.", "data" => $data);
         } else {
             $response = array("error_code" => 500, "message" => "Failed to add data.");
@@ -300,9 +487,39 @@ if ($check_error == 1) {
 
     // Prepare the response
     if ($res) {
-        $data = [
-            ["visitor_id" => $visitor_id, "visitor_name" => $visitor_name, "employee_id" => $meeting_with, "visitor_mobile" => $mobile_no, "visitor_photo" => $user_img]
-        ];
+         $sql_query=mysqli_query($mysqli,"SELECT * FROM `employee_header_all` WHERE emp_id='$meeting_with'");
+           $row_emp=mysqli_fetch_assoc($sql_query);
+            $visitor_approval_required="";
+            $visiting_charges="";
+            $verification_paid_by="";
+            if($row_emp["visitor_approval_required"]==1)
+            {
+                $visitor_approval_required="Y";
+            }
+            else
+            {
+                $visitor_approval_required="N";
+
+            }
+            if($row_emp["visiting_charges"]==1)
+            {
+                $visiting_charges="Y";
+            }
+            else
+            {
+                $visiting_charges="N";
+
+            }
+             if($row_emp["verification_paid_by"]=='W')
+            {
+                $verification_paid_by="W";
+            }
+            else
+            {
+                $verification_paid_by="E";
+
+            }
+            $data[]=["visitor_id"=>$visitor_id,"visitor_name"=>$visitor_name,"employee_id"=>$meeting_with,"visitor_mobile"=>$mobile_no,"visitor_photo"=>$user_img,"visitor_approval_required"=>$visitor_approval_required,"visiting_charges"=>$visiting_charges,"verification_paid_by"=>$verification_paid_by];
         $response = array("error_code" => 100, "message" => "Visitor Manual record successfully added.", "data" => $data);
     } else {
         $response = array("error_code" => 101, "message" => "Failed to add visitor record.");

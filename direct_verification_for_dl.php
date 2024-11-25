@@ -156,8 +156,29 @@ if($check_error==1){
     $verify_driving = verify_driving_licence($driving_licence_no, $dob1);
     // print_r($verify_driving);
     // die();
+    $fetch_wallet = "SELECT `current_wallet_bal` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
+            $res_wallet = mysqli_query($mysqli, $fetch_wallet);
+            $arr_wallet = mysqli_fetch_assoc($res_wallet);
+            if ($arr_wallet['current_wallet_bal'] < $total_amount) {
+                $responce = ["error_code" => 113, "message" => "Due to a technical issue, we are unable to complete your verification at this time. Please contact your agency for further assistance."];
+                            echo json_encode($responce);
+                            return;
+                        } 
+                 // die();
+             }
+             else
+             {
+                $message = $verification_data['error']['message'];
+                $response = [
+                    "error_code" => 199,
+                    "message" => $message,
+                    "transaction_id" => $verification_data['transaction_id']
+                ];
+                echo json_encode($response);
+                return;
+             }
           
-}
+
     if ($is_verified == "yes") {
         $fetch_wallet = "SELECT `current_wallet_bal` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
         $res_wallet = mysqli_query($mysqli, $fetch_wallet);
@@ -180,28 +201,28 @@ if($check_error==1){
       
 
      $currdate=date('Y-m-d H:i:s');
-if($is_verified=="yes"){
-    $verify_driving = verify_driving_licence($driving_licence_no, $dob1);
-    // print_r($verify_driving);
-    // exit;
-    // if($verify_driving['status']=="500"){
-    //     $responce = ["error_code" => 126, "message" => "Internal server error"];
-    //     echo json_encode($responce);
-    //     exit;
-    // }
-    
-}
-    $direct_id = unique_id_genrate('DIR', 'direct_verification_details_all', $mysqli);
-    if($user_photo!=""){
-        $user_img=save_doc_photo($user_photo, $direct_id, $agency_id);
-    }
-    if($front_photo!=""){
-  $front_img=save_doc_photo($front_photo, $direct_id, $agency_id);
-    }
-  if($back_photo!=""){
-    $back_img=save_doc_photo($back_photo, $direct_id, $agency_id);
-  }
-//   $back_img=save_doc_photo($back_photo, $direct_id, $agency_id);
+        if($is_verified=="yes"){
+            $verify_driving = verify_driving_licence($driving_licence_no, $dob1);
+            // print_r($verify_driving);
+            // exit;
+            // if($verify_driving['status']=="500"){
+            //     $responce = ["error_code" => 126, "message" => "Internal server error"];
+            //     echo json_encode($responce);
+            //     exit;
+            // }
+            
+        }
+            $direct_id = unique_id_genrate('DIR', 'direct_verification_details_all', $mysqli);
+            if($user_photo!=""){
+                $user_img=save_doc_photo($user_photo, $direct_id, $agency_id);
+            }
+            if($front_photo!=""){
+          $front_img=save_doc_photo($front_photo, $direct_id, $agency_id);
+            }
+          if($back_photo!=""){
+            $back_img=save_doc_photo($back_photo, $direct_id, $agency_id);
+          }
+        //   $back_img=save_doc_photo($back_photo, $direct_id, $agency_id);
          
          $data = json_decode($verify_driving);
     //   print_r($data->data->driving_license_data);
@@ -259,41 +280,41 @@ if($is_verified=="yes"){
 
 
 
-$valid = empty($valid_till) ? $edited_valid_till : $valid_till;
-if($nonTransportValidTillDate==$date_of_expiry){
-    $valid_match="Match";
-}else{
-    $valid_match="Not Match";
-}
+            $valid = empty($valid_till) ? $edited_valid_till : $valid_till;
+            if($nonTransportValidTillDate==$date_of_expiry){
+                $valid_match="Match";
+            }else{
+                $valid_match="Not Match";
+            }
 
-if($nonTransportIssuedOnDate==$date_of_issue){
-    $valid_match_i="Match";
-}else{
-    $valid_match_i="Not Match";
-}
-if($categories==$vehicle_class){
-    $vehicle_match="Match";
-}else{
-    $vehicle_match="Not Match";
-}
+            if($nonTransportIssuedOnDate==$date_of_issue){
+                $valid_match_i="Match";
+            }else{
+                $valid_match_i="Not Match";
+            }
+            if($categories==$vehicle_class){
+                $vehicle_match="Match";
+            }else{
+                $vehicle_match="Not Match";
+            }
 
-// Check if the array is not empty before iterating
-if (!empty($categories)) {
-    $csvString = ""; // Initialize CSV string
+        // Check if the array is not empty before iterating
+        if (!empty($categories)) {
+            $csvString = ""; // Initialize CSV string
 
-    foreach ($categories as $category) {
-        $csvString .= $category->category . ",";
-    }
+            foreach ($categories as $category) {
+                $csvString .= $category->category . ",";
+            }
 
-    // Remove the trailing comma
-    $csvString = rtrim($csvString, ",");
-        if($csvString==$vehicle_class){
-    $vehicle_match="Match";
-}else{
-    $vehicle_match="Not Match";
-}
-   
-}
+            // Remove the trailing comma
+            $csvString = rtrim($csvString, ",");
+                if($csvString==$vehicle_class){
+            $vehicle_match="Match";
+        }else{
+            $vehicle_match="Not Match";
+        }
+           
+        }
 $name1 = empty($user_name) ? $edited_name : $user_name;
      if($as_per_doc_name == $name1){
         $name_match="Match";

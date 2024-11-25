@@ -16,8 +16,8 @@ $mysqli = $connection->getConnection();
 $connection1 = database::getInstance();
 $mysqli1 = $connection1->getConnection();
 
-apponoff($mysqli);  
-logout($_SERVER['HTTP_AUTH_KEY'], $mysqli);
+// apponoff($mysqli);  
+// logout($_SERVER['HTTP_AUTH_KEY'], $mysqli);
 $system_date = date("Y-m-d H:i:s");
 $agency_id = $_GET['agency_id'] ?? "";
 $app_id = $_GET['app_id'] ?? "";

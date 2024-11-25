@@ -537,7 +537,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="email-content">
                                     <p>Dear Recipient,</p>
                                     <p>Please click on the link below to access your member profile and complete the data required for verification. This link is valid for 24 hours only for security reasons:</p>
-                                         <p><a href="https://mounarchtech.com/vocoxp/upload_link/web_verification_form.php?enduser_id=' .$end_user_ids[$i] . '">Click here to complete your verification</a></p>
+                                         <p><a href="https://mounarchtech.com/vocoxp/upload_link/web_verification_form.php?enduser_id=' .$end_user_ids[$i] . '&t='.time().'&reset_captcha=true">Click here to complete your verification</a></p>
                                     <p>If you have any questions or require assistance, please don\'t hesitate to reach out to our support team at <a href="mailto:support@microintegrated.in">support@microintegrated.in</a>.</p>
                                     <p>Thank you for your time and cooperation.</p>
                                     <p><b>Best regards,</b></p>

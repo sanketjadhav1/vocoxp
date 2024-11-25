@@ -14,22 +14,22 @@ $mysqli1 = $connection1->getConnection();
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $agency_id = $_GET['agency_id'];
     // $request_no = $_GET['request_no'];
-    $bulk_id = $_GET['bulk_id'];
+    $emp_id = $_GET['emp_id'];
     $fetch_agency = "SELECT `company_name`, `agency_logo`, `address`, `mobile_no` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
     $res_agency = mysqli_query($mysqli, $fetch_agency);
     $arr_agency = mysqli_fetch_assoc($res_agency);
     $otp = rand(10000, 99999);
-    $weblink_details = "SELECT `verifications` FROM `bulk_weblink_request_all` WHERE `bulk_id` = '$bulk_id'";
-    $weblink_result = $mysqli->query($weblink_details);
-    $weblink_array = mysqli_fetch_assoc($weblink_result);
-    $verifications = $weblink_array['verifications'];
-    $update_end_details = "UPDATE `bulk_end_user_transaction_all` SET `scheduled_verifications`='$verifications' WHERE `bulk_id`='$bulk_id'";
-    $res_update = mysqli_query($mysqli, $update_end_details);
-    $fetch_data = "SELECT * FROM `bulk_weblink_request_all` WHERE `agency_id`='$agency_id'";
-    $res_data = mysqli_query($mysqli, $fetch_data);
-    while ($arr_data = mysqli_fetch_assoc($res_data)) {
-        $arr_all[] = $arr_data;
-    }
+    // $weblink_details = "SELECT `verifications` FROM `bulk_weblink_request_all` WHERE `bulk_id` = '$bulk_id'";
+    // $weblink_result = $mysqli->query($weblink_details);
+    // $weblink_array = mysqli_fetch_assoc($weblink_result);
+    // $verifications = $weblink_array['verifications'];
+    // $update_end_details = "UPDATE `bulk_end_user_transaction_all` SET `scheduled_verifications`='$verifications' WHERE `bulk_id`='$bulk_id'";
+    // $res_update = mysqli_query($mysqli, $update_end_details);
+    // $fetch_data = "SELECT * FROM `bulk_weblink_request_all` WHERE `agency_id`='$agency_id'";
+    // $res_data = mysqli_query($mysqli, $fetch_data);
+    // while ($arr_data = mysqli_fetch_assoc($res_data)) {
+    //     $arr_all[] = $arr_data;
+    // }
 }
 $fetch_verification = "SELECT * FROM `verification_configuration_all` WHERE `ver_type`='1'";
 $res_verificaton = mysqli_query($mysqli1, $fetch_verification);
