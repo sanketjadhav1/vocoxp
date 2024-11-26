@@ -129,10 +129,53 @@ try {
 
 $response = savePDF($output_pdf, $remote_base_dir, $agency_id, $for, $system_date,$visitor_id,$emp_id);
  
-    $res[] = ["pdf_url" => $_POST['path'], 'current_wallet_bal' => number_format($_POST['current_wallet_bal'], 2, '.', '')];
-    $data = ["error_code" => 100, "message" => "PDF generated successfully.", "data" => $res];
-    echo json_encode($data);
-    return;
+
+$res[] = ["pdf_url" => $_POST['path'], 'current_wallet_bal' => number_format($_POST['current_wallet_bal'], 2, '.', ''), 'visitor_id' => $visitor_id];
+
+//add new data in array according to document type
+$array_index = count($res) - 1;  
+$message = $_POST['message'] ??  'PDF generated successfully.';
+if ($for === 'aadhar_report') {                 //for aadhar card
+    $res[$array_index]['aadhar_number'] = $_POST['aadhar_number'] ?? '';
+    $res[$array_index]['aadhar_name'] = $_POST['aadhar_name'] ?? '';
+    $res[$array_index]['date_of_birth'] = $_POST['date_of_birth'] ?? '';
+    $res[$array_index]['gender'] = $_POST['gender'] ?? '';
+    $res[$array_index]['father_name'] = $_POST['father_name'] ?? '';
+    $res[$array_index]['address'] = $_POST['address'] ?? '';
+} elseif ($for === 'pan_card_report') {         //for pan card
+    $res[$array_index]['pan_number'] = $_POST['pan_number'] ?? '';
+    $res[$array_index]['pan_name'] = $_POST['pan_name'] ?? '';
+    $res[$array_index]['pan_card_type'] = $_POST['pan_card_type'] ?? '';
+} elseif ($for === 'voter_id_card_report') {    //for voter id
+    $res[$array_index]['voter_number'] = $_POST['voter_number'] ?? '';
+    $res[$array_index]['voter_name'] = $_POST['voter_name'] ?? '';
+    $res[$array_index]['relative_name'] = $_POST['relative_name'] ?? '';
+    $res[$array_index]['gender'] = $_POST['gender'] ?? '';
+    $res[$array_index]['age'] = $_POST['age'] ?? '';
+    $res[$array_index]['address'] = $_POST['address'] ?? '';
+} elseif ($for === 'dl_report') {               //for DL
+    $res[$array_index]['dl_number'] = $_POST['dl_number'] ?? '';
+    $res[$array_index]['dl_name'] = $_POST['dl_name'] ?? '';
+    $res[$array_index]['relative_name'] = $_POST['relative_name'] ?? '';
+    $res[$array_index]['date_of_birth'] = $_POST['date_of_birth'] ?? '';
+    $res[$array_index]['issue_state'] = $_POST['issue_state'] ?? '';
+    $res[$array_index]['address'] = $_POST['address'] ?? '';
+    $res[$array_index]['transport_issue_date'] = $_POST['transport_issue_date'] ?? '';
+    $res[$array_index]['transport_expiry_date'] = $_POST['transport_expiry_date'] ?? '';
+    $res[$array_index]['non_transport_issue_date'] = $_POST['non_transport_issue_date'] ?? '';
+    $res[$array_index]['non_transport_expiry_date'] = $_POST['non_transport_expiry_date'] ?? '';
+} elseif ($for === 'passport_no_report') {      //for passport
+    $res[$array_index]['passport_number'] = $_POST['passport_number'] ?? '';
+    $res[$array_index]['passport_name'] = $_POST['passport_name'] ?? '';
+    $res[$array_index]['file_no'] = $_POST['file_no'] ?? '';
+    $res[$array_index]['date_of_birth'] = $_POST['date_of_birth'] ?? '';
+    $res[$array_index]['issue_date'] = $_POST['issue_date'] ?? '';
+}
+
+$data = ["error_code" => 100, "message" => $message, "data" => $res];
+
+echo json_encode($data);
+return;
  
 
 ?>

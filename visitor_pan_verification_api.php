@@ -74,8 +74,8 @@ if ($check_error_res == 1) {
             $verify_cgst_amount = ($verify_rate * $cgst_percentage) / 100;
 
             //get total verification rate according to location
-            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= $visitor_location_id";
-            $location_setting_res = $mysqli1->query($location_setting_query);
+            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= '$visitor_location_id'";
+            $location_setting_res = $mysqli->query($location_setting_query);
             $location_setting_row = $location_setting_res->fetch_assoc();
 
             $location_ver_amt = 0;
@@ -176,7 +176,7 @@ if ($check_error_res == 1) {
 
 
         /* create & save pdf start */
-        $temp_dob = ($visitor_temp_detail_arr['dob'] != '') ? $visitor_temp_detail_arr['dob'] : '';
+        $temp_dob = ($visitor_temp_detail_arr['dob'] != '' && $visitor_temp_detail_arr['dob'] != '0000-00-00') ? $visitor_temp_detail_arr['dob'] : '';
         $html_pdf = '<html>
     <head>
     <meta charset="utf-8">

@@ -60,7 +60,7 @@ if ($check_error_res == 1) {
             $fetch_wallet = "SELECT `current_wallet_bal` FROM `agency_header_all` WHERE `agency_id`='$agency_id'";
             $res_wallet = mysqli_query($mysqli, $fetch_wallet);
             $arr_wallet = mysqli_fetch_assoc($res_wallet);
-           
+
             //get total verification rate & gst 
             $verify_query = "SELECT * FROM verification_configuration_all WHERE verification_id='$verification_id' AND ver_type='1' AND operational_status='1'";
             $verify_res = $mysqli1->query($verify_query);
@@ -75,8 +75,8 @@ if ($check_error_res == 1) {
             $verify_cgst_amount = ($verify_rate * $cgst_percentage) / 100;
 
             //get total verification rate according to location
-            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= $visitor_location_id";
-            $location_setting_res = $mysqli1->query($location_setting_query);
+            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= '$visitor_location_id'";
+            $location_setting_res = $mysqli->query($location_setting_query);
             $location_setting_row = $location_setting_res->fetch_assoc();
 
             $location_ver_amt = 0;
@@ -446,7 +446,7 @@ if ($check_error_res == 1) {
         if ($pdf_path !== false) {
             // PDF generated successfully
             $response['error_code'] = 100;
-            $response['message'] = 'PDF generated successfully.';
+            $response['message'] = 'Voter details successfully fetched.';
             $response['pdf_url'] = $pdf_path;
             $data = [
                 "path" => $pdf_path,
@@ -454,7 +454,14 @@ if ($check_error_res == 1) {
                 "agency_id" => $agency_id,
                 "visitor_id" => $visitor_id,
                 "emp_id" => $emp_id,
-                "current_wallet_bal" => number_format($current_wallet_bal, 2, '.', '')
+                "current_wallet_bal" => number_format($current_wallet_bal, 2, '.', ''),
+                "voter_number" => $original_voter_details['document_id'],
+                "voter_name" => $original_voter_details['name'],
+                "relative_name" => $original_voter_details['father_name'],
+                "gender" => $original_voter_details['gender'],
+                "age" => $original_voter_details['age'],
+                "address" => $original_voter_details['polling_station'],
+                "message" => 'Voter details successfully fetched',
             ];
 
             $url = get_base_url() . '/new_visitor.php';

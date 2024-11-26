@@ -84,8 +84,8 @@ if ($check_error_res == 1) {
             $verify_cgst_amount = ($verify_rate * $cgst_percentage) / 100;
 
             //get total verification rate according to location
-            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= $visitor_location_id";
-            $location_setting_res = $mysqli1->query($location_setting_query);
+            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= '$visitor_location_id'";
+            $location_setting_res = $mysqli->query($location_setting_query);
             $location_setting_row = $location_setting_res->fetch_assoc();
 
             $location_ver_amt = 0;
@@ -494,7 +494,18 @@ if ($check_error_res == 1) {
                 "agency_id" => $agency_id,
                 "visitor_id" => $visitor_id,
                 "emp_id" => $emp_id,
-                "current_wallet_bal" => number_format($current_wallet_bal, 2, '.', '')
+                "current_wallet_bal" => number_format($current_wallet_bal, 2, '.', ''),
+                "dl_number" => $original_dl_details['document_id'],
+                "dl_name" => $original_dl_details['name'],
+                "relative_name" => $original_dl_details['dependent_name'],
+                "date_of_birth" => $original_dl_details['date_of_birth'],
+                "issue_state" => $original_dl_details['rto_details']['state'],
+                "address" => $original_dl_details['address'],
+                "transport_issue_date" => '',
+                "transport_expiry_date" => '',
+                "non_transport_issue_date" => $original_dl_details['validity']['non_transport']['issue_date'],
+                "non_transport_expiry_date" => $original_dl_details['validity']['non_transport']['expiry_date'],
+                "message" => 'DL details successfully fetched.'
             ];
 
             $url = get_base_url() . '/new_visitor.php';

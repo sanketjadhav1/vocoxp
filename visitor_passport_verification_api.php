@@ -83,8 +83,8 @@ if ($check_error_res == 1) {
             $verify_cgst_amount = ($verify_rate * $cgst_percentage) / 100;
 
             //get total verification rate according to location
-            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= $visitor_location_id";
-            $location_setting_res = $mysqli1->query($location_setting_query);
+            $location_setting_query = "SELECT `verification_amt` FROM visitor_location_setting_details_all WHERE agency_id='$agency_id' AND visitor_location_id= '$visitor_location_id'";
+            $location_setting_res = $mysqli->query($location_setting_query);
             $location_setting_row = $location_setting_res->fetch_assoc();
 
             $location_ver_amt = 0;
@@ -470,7 +470,13 @@ if ($check_error_res == 1) {
                 "agency_id" => $agency_id,
                 "visitor_id" => $visitor_id,
                 "emp_id" => $emp_id,
-                "current_wallet_bal" => number_format($current_wallet_bal, 2, '.', '')
+                "current_wallet_bal" => number_format($current_wallet_bal, 2, '.', ''),
+                "passport_number" => $original_passport_details['document_id'],
+                "passport_name" => $original_passport_details['first_name'],
+                "file_no" => $original_passport_details['file_number'],
+                "date_of_birth" => $original_passport_details['date_of_birth'],
+                "issue_date" => $original_passport_details['issue_date'],
+                "message" => 'Passport details successfully fetched.',
             ];
 
             $url = get_base_url() . '/new_visitor.php';
